@@ -1,25 +1,7 @@
 from django.contrib.auth import authenticate
 
 from rest_framework import serializers
-from .models import (
-    NewUser,
-    Company,
-    Perception,
-    Loyalty,
-    Advocacy,
-    Attraction,
-    Influence,
-    Brand,
-    AttributesOfGreatPlace,
-    KeyThemes,
-    AudienceWiseMessaging,
-    SwotAnalysis,
-    Alignment,
-    MessagingHierarchyTabs,
-    MessagingHierarchyData,
-    EVPPromise,
-    EVPAudit,
-)
+from .models import *
 
 class NewUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -125,4 +107,9 @@ class EVPPromiseSerializer(serializers.ModelSerializer):
 class EVPAuditSerializer(serializers.ModelSerializer):
     class Meta:
         model = EVPAudit
+        fields = "__all__"
+
+class EVPEmbedmentMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EVPEmbedmentMessage
         fields = "__all__"

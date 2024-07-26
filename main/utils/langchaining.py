@@ -15,6 +15,9 @@ from ..models import (
     MessagingHierarchyTabs,
     EVPPromise,
     EVPAudit,
+    EVPEmbedmentStage,
+    EVPEmbedmentTouchpoint,
+    EVPEmbedmentMessage,
 )
 
 from ..serializers import (
@@ -1056,6 +1059,152 @@ def get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data
     evp_audit = EVPAudit.objects.filter(user=user, company=company_id)
     serializer = EVPAuditSerializer(evp_audit, many=True)
     return serializer.data
+
+all_touchpoint_prompts = {
+"Careers Website": """Create content for the Careers section of our website that highlights our company culture, benefits, and career growth opportunities. Include testimonials from current employees and visuals of our work environment.
+""",
+"LinkedIn": """Draft a LinkedIn post to attract potential candidates. Include a call-to-action for interested candidates to visit our careers page
+""",
+"Instagram": """Design an Instagram post showcasing a day in the life at our company.  a caption that highlights the fun and collaborative work environment.
+""",
+"Facebook": """Generate a Facebook post announcing our open positions and the benefits of working with us. Include a link to the job application page and encourage followers to share the post.
+""",
+"Tiktok": """Write a video script for TikTok post. The video should be engaging and fun, encouraging viewers to apply for open positions.
+""",
+"Twitter X": """Compose a tweet to announce job openings at our company. Highlight key benefits and provide a link to the application page. Use relevant hashtags to increase visibility.
+""",
+"Job Board": """Create a job board posting that details the responsibilities, requirements, and benefits of the open position. Make sure to include information about our company culture and growth opportunities
+""",
+"Job Description": """Write a detailed job description for the open position, including responsibilities, required skills, and qualifications. Highlight opportunities for career growth and development.
+""",
+"Job Ad": """Generate a job ad that will catch the attention of potential candidates. Focus on the benefits of working at our company and include a clear call-to-action for applying.
+""",
+"Referral Email": """Draft an email template for employees to refer candidates for open positions. Include information about the referral program and the benefits of working at our company.
+""",
+"Event Toolkit": """Create a toolkit for hiring events that includes promotional materials, banners, flyers, and information packets about our company and open positions.
+""",
+"Interview Talking Points": """Generate a list of talking points for interviewers to use during candidate interviews. Include key information about the company, role expectations, and career growth opportunities.
+""",
+"Application Form": """Design a user-friendly job application form that captures essential candidate information while providing a seamless application experience.
+""",
+"Offer Letter": """Draft a template for offer letters to be sent to successful candidates. Ensure it includes details about the role, compensation, benefits, and start date.
+""",
+"Welcome Email": """Create a welcome email template for new employees. The email should express enthusiasm, provide essential information about their first day, and include links to resources like the employee handbook.
+""",
+"Employee Handbook": """Develop an employee handbook that outlines company policies, procedures, and culture. Include sections on benefits, code of conduct, and employee resources.
+""",
+"Merchandise": """Generate ideas for onboarding merchandise, such as branded t-shirts, mugs, and notebooks, that new employees can receive on their first day.
+""",
+"Orientation Deck": """Design an orientation presentation deck that introduces new employees to the company's mission, values, and key personnel. Include information about company history and future goals.
+""",
+"Email Template": """Create an internal email template for company-wide announcements and updates. Ensure it is visually appealing and easy to read, with space for images and important links
+""",
+"PPT Template": """Design a PowerPoint template for internal presentations. The template should be branded with the company logo and colors, and include slide layouts for various types of content.
+""",
+"Living the EVP Module": """Develop a training module that helps employees understand and live the Employee Value Proposition (EVP). Include interactive elements, real-life examples, and exercises that reinforce the company’s values and culture
+""",
+"Goal Setting": """Create a goal-setting template for employees to outline their objectives and key results (OKRs). Ensure it includes sections for personal development and alignment with company goals.
+""",
+"Feedback Mechanism": """Develop a feedback mechanism that allows employees to provide and receive constructive feedback. Include templates for 360-degree feedback, performance reviews, and peer feedback.
+""",
+"Posters": """Design posters that reflect the company's values and culture to be displayed around the office. Ensure they are visually appealing and motivational.
+""",
+"Wall Branding": """Create wall branding ideas that incorporate the company's logo, colors, and mission statement. Focus on areas like the lobby, meeting rooms, and common areas
+""",
+"Breakout Areas": """Provide design concepts for breakout areas that encourage relaxation and collaboration. Include furniture suggestions and layout ideas.
+""",
+"Overall Layout": """Develop a floor plan layout that maximizes space efficiency and fosters a productive work environment. Consider incorporating open-plan areas, private workstations, and collaboration zones.
+""",
+"Increment Letter": """Draft a template for increment letters that inform employees about their salary increases. Include details about the new compensation, effective date, and reasons for the increase.
+""",
+"Promotion Letter": """Create a promotion letter template to congratulate employees on their new role. Include information about the new position, responsibilities, and any changes in compensation.
+""",
+"Correction Letter": """Generate a template for correction letters to address any discrepancies or changes in employee compensation. Ensure it is clear and professional.
+""",
+"Reward and Recognition Program": """Develop a reward and recognition program that outlines how employees can be acknowledged for their achievements. Include guidelines for nominations, selection criteria, and types of rewards.
+""",
+"Employee Survey": """Design an employee engagement survey to gather feedback on various aspects of the workplace, including satisfaction, culture, and areas for improvement.
+""",
+"Engagement Activity Calendar": """Create a calendar of employee engagement activities, including team-building events, social gatherings, and professional development opportunities.
+""",
+"Exit Interview": """Develop an exit interview template to gather feedback from departing employees. Include questions about their experiences, reasons for leaving, and suggestions for improvement.
+""",
+"Exit Process": """Create a detailed exit process checklist to ensure a smooth transition for departing employees. Include steps for returning company property, finalizing paperwork, and conducting exit interviews.
+""",
+"Farewell Communication Template": """Generate a template for farewell communications to announce an employee's departure. Ensure it is respectful and expresses gratitude for their contributions.
+"""
+}
+
+def get_evp_embedment_data_from_chatgpt(company_name, user, all_touchPoints, top_4_themes_data, tagline_data, evp_promise_data, evp_audit_data):
+    company = Company.objects.get(name=company_name)
+    company_id = company.id
+
+    base_prompt = f"""
+                First analyze the Themes Data
+                Themes Data: {top_4_themes_data}
+
+                Now analyze the Tagline Data
+                Tagline Data : {tagline_data}
+
+                Now analyze the EVP Promise Data
+                EVP Promise Data : {evp_promise_data}
+
+                Now analyze the EVP Audit Data
+                EVP Audit Data : {evp_audit_data}
+
+                After analyzing all these datasets, give fetch the required information below about the company named {company_name} from the given data:
+
+              """
+    
+    json_data = {}
+    for stage, touchpoints in all_touchPoints.items():
+        if len(touchpoints) > 0:
+            json_data[stage] = {}
+            for touchpoint in touchpoints:
+                print(touchpoint)
+                information_to_fetch = all_touchpoint_prompts.get(touchpoint, "")
+                prompt = base_prompt + information_to_fetch.format(all_touchpoint_prompts[touchpoint])
+
+                completion = chat_client.chat.completions.create(
+                model="STIMULAIGPT4O",
+                messages = [
+                    {
+                        "role":"system",
+                        "content":"""You are an expert in fetching information from the given data.
+                                    """
+                    },
+                    {
+                        "role":"user",
+                        "content":prompt
+                    }
+                ],
+                temperature=0.3,
+                max_tokens=4000,
+                )
+                chat_response = completion.choices[0].message.content
+                json_data[stage][touchpoint] = chat_response
+
+    for stage_name, touchpoints in json_data.items():
+        stage, created = EVPEmbedmentStage.objects.get_or_create(
+            user = user,
+            company = company,
+            stage_name = stage_name
+        )
+        for touchpoint_name, message_content in touchpoints.items():
+            touchpoint, created = EVPEmbedmentTouchpoint.objects.get_or_create(
+                user = user,
+                company = company,
+                stage = stage,
+                touchpoint_name = touchpoint_name,
+            )
+            EVPEmbedmentMessage.objects.create(
+                user = user,
+                company = company,
+                touchpoint = touchpoint,
+                message = message_content,
+            )
+    
+    return json_data
 
 import chromadb
 

@@ -238,3 +238,29 @@ class EVPAudit(models.Model):
 
     def __str__(self):
         return f"{self.theme}"
+    
+class EVPEmbedmentStage(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    stage_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.stage_name
+    
+class EVPEmbedmentTouchpoint(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    stage = models.ForeignKey(EVPEmbedmentStage, related_name='touchpoints', on_delete=models.CASCADE)
+    touchpoint_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.stage.stage_name} - {self.touchpoint_name}"
+    
+class EVPEmbedmentMessage(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    touchpoint = models.OneToOneField(EVPEmbedmentTouchpoint, related_name='message', on_delete=models.CASCADE)
+    message = models.TextField()
+
+    def __str__(self):
+        return f"{self.touchpoint.stage.stage_name} - {self.touchpoint.touchpoint_name}"

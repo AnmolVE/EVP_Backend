@@ -55,7 +55,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=20),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -194,7 +194,10 @@ AUTH_USER_MODEL = "main.NewUser"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://stimulai.eastus2.cloudapp.azure.com:3000",
+    "http://localhost:3000",
+]
 
 # Send Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

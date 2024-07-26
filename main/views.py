@@ -15,45 +15,9 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import (
-    NewUser,
-    Company,
-    Perception,
-    Loyalty,
-    Advocacy,
-    Attraction,
-    Influence,
-    Brand,
-    AttributesOfGreatPlace,
-    KeyThemes,
-    AudienceWiseMessaging,
-    SwotAnalysis,
-    Alignment,
-    MessagingHierarchyTabs,
-    MessagingHierarchyData,
-    EVPPromise,
-    EVPAudit,
-)
-from .serializers import (
-    NewUserSerializer,
-    UserLoginSerializer,
-    CompanySerializer,
-    PerceptionSerializer,
-    LoyaltySerializer,
-    AdvocacySerializer,
-    AttractionSerializer,
-    InfluenceSerializer,
-    BrandSerializer,
-    AttributesOfGreatPlaceSerializer,
-    KeyThemesSerializer,
-    AudienceWiseMessagingSerializer,
-    SwotAnalysisSerializer,
-    AlignmentSerializer,
-    MessagingHierarchyTabsSerializer,
-    MessagingHierarchyDataSerializer,
-    EVPPromiseSerializer,
-    EVPAuditSerializer,
-)
+from .models import *
+
+from .serializers import *
 
 from langchain.chains import RetrievalQA
 from langchain_openai import AzureOpenAIEmbeddings
@@ -87,6 +51,7 @@ from .utils.langchaining import (
     get_creative_direction_from_chatgpt,
     get_evp_promise_from_chatgpt,
     get_evp_audit_from_chatgpt,
+    get_evp_embedment_data_from_chatgpt,
 )
 from .utils.email_send import send_email_to_users
 
@@ -544,29 +509,6 @@ class DesignPrinciplesAPIView(APIView):
                 )
                 return Response("Design Principles added successfully", status=status.HTTP_201_CREATED)
         return Response("Please upload at least one document", status=status.HTTP_400_BAD_REQUEST)
-
-class CompanyAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        try:
-            company = Company.objects.get(user=user)
-        except Company.DoesNotExist:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer = CompanySerializer(company)
-        return Response(serializer.data)
-
-    def post(self, request):
-        data = request.data
-        user = request.user
-        data["user"] = request.user.id
-        serializer = CompanySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CompanySpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -592,19 +534,6 @@ class CompanySpecificAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class PerceptionAPIView(APIView):
-    def get(self, request):
-        perceptions = Perception.objects.all()
-        serializer = PerceptionSerializer(perceptions, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = PerceptionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class PerceptionSpecificAPIView(APIView):
@@ -645,19 +574,6 @@ class PerceptionSpecificAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class LoyaltyAPIView(APIView):
-    def get(self, request):
-        loyalties = Loyalty.objects.all()
-        serializer = LoyaltySerializer(loyalties, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = LoyaltySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 class LoyaltySpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -694,19 +610,6 @@ class LoyaltySpecificAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class AdvocacyAPIView(APIView):
-    def get(self, request):
-        advocacies = Advocacy.objects.all()
-        serializer = AdvocacySerializer(advocacies, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = AdvocacySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class AdvocacySpecificAPIView(APIView):
@@ -747,19 +650,6 @@ class AdvocacySpecificAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class AttractionAPIView(APIView):
-    def get(self, request):
-        attractions = Attraction.objects.all()
-        serializer = AttractionSerializer(attractions, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = AttractionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 class AttractionSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -796,19 +686,6 @@ class AttractionSpecificAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class InfluenceAPIView(APIView):
-    def get(self, request):
-        influences = Influence.objects.all()
-        serializer = InfluenceSerializer(influences, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = InfluenceSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class InfluenceSpecificAPIView(APIView):
@@ -849,19 +726,6 @@ class InfluenceSpecificAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class BrandAPIView(APIView):
-    def get(self, request):
-        brands = Brand.objects.all()
-        serializer = BrandSerializer(brands, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = BrandSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 class BrandSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -898,19 +762,6 @@ class BrandSpecificAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class AttributesOfGreatPlaceAPIView(APIView):
-    def get(self, request):
-        attributes_of_great_place = AttributesOfGreatPlace.objects.all()
-        serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_place, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def post(self, request):
-        serializer = AttributesOfGreatPlaceSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class AttributesOfGreatPlaceSpecificAPIView(APIView):
@@ -951,19 +802,6 @@ class AttributesOfGreatPlaceSpecificAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class KeyThemesAPIView(APIView):
-    def get(self, request):
-        key_themes = KeyThemes.objects.all()
-        serializer = KeyThemesSerializer(key_themes, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def post(self, request):
-        serializer = KeyThemesSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 class KeyThemesSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1000,19 +838,6 @@ class KeyThemesSpecificAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class AudienceWiseMessagingAPIView(APIView):
-    def get(self, request):
-        audience_wise_messaging = AudienceWiseMessaging.objects.all()
-        serializer = AudienceWiseMessagingSerializer(audience_wise_messaging, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def post(self, request):
-        serializer = AudienceWiseMessagingSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class AudienceWiseMessagingSpecificAPIView(APIView):
@@ -1053,19 +878,6 @@ class AudienceWiseMessagingSpecificAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class SwotAnalysisAPIView(APIView):
-    def get(self, request):
-        swot_analysis = SwotAnalysis.objects.all()
-        serializer = SwotAnalysisSerializer(swot_analysis, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def post(self, request):
-        serializer = SwotAnalysisSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class SwotAnalysisSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1102,19 +914,6 @@ class SwotAnalysisSpecificAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class AlignmentAPIView(APIView):
-    def get(self, request):
-        alignment = Alignment.objects.all()
-        serializer = AlignmentSerializer(alignment, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def post(self, request):
-        serializer = AlignmentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class AlignmentSpecificAPIView(APIView):
@@ -1308,6 +1107,104 @@ class EVPAuditAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(evp_audit_from_chatgpt)
+    
+class EVPEmbedmentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        all_touchPoints = request.data.get("touchpoints")
+
+        try:
+            top_4_themes_instances = MessagingHierarchyTabs.objects.filter(user=user, company=company)
+        except MessagingHierarchyTabs.DoesNotExist:
+            return Response({"error": "Messaging Hierarchy Tabs does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            tagline_instance = MessagingHierarchyData.objects.get(user=user, company=company)
+        except MessagingHierarchyData.DoesNotExist:
+            return Response({"error": "Messaging Hierarchy Data does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_promise_instances = EVPPromise.objects.filter(user=user, company=company)
+        except EVPPromise.DoesNotExist:
+            return Response({"error": "EVP Promise does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_audit_instances = EVPAudit.objects.filter(user=user, company=company)
+        except EVPAudit.DoesNotExist:
+            return Response({"error": "EVP Audit does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        top_4_themes_data = " ".join(instance.tabs_data for instance in top_4_themes_instances)
+        
+        tagline_data = tagline_instance.tagline
+
+        evp_promise_data_list = []
+        for instance in evp_promise_instances:
+            data = f"{instance.what_makes_this_theme_distinctive} {instance.what_employees_can_expect} {instance.what_is_expected_of_employees}"
+            evp_promise_data_list.append(data)
+
+        evp_promise_data = " ".join(evp_promise_data_list)
+
+        evp_audit_data_list = []
+        for instance in evp_audit_instances:
+            data = f"{instance.what_makes_this_credible} {instance.where_do_we_need_to_stretch}"
+            evp_audit_data_list.append(data)
+
+        evp_audit_data = " ".join(evp_audit_data_list)
+        
+        evp_embedment_data_from_chatgpt = get_evp_embedment_data_from_chatgpt(company_name,
+                                                                              user,
+                                                                              all_touchPoints,
+                                                                              top_4_themes_data,
+                                                                              tagline_data,
+                                                                              evp_promise_data,
+                                                                              evp_audit_data
+                                                                            )
+
+        return Response(evp_embedment_data_from_chatgpt)
+    
+class EVPExecutionPlanSpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, company_name):
+        user = request.user
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        stages = EVPEmbedmentStage.objects.filter(user=user, company=company)
+        response_data = []
+
+        for stage in stages:
+            touchpoints = EVPEmbedmentTouchpoint.objects.filter(stage=stage)
+            touchpoint_data = []
+            for touchpoint in touchpoints:
+                try:
+                    message = EVPEmbedmentMessage.objects.get(touchpoint=touchpoint)
+                    touchpoint_data.append({
+                        "touchpoint": touchpoint.touchpoint_name,
+                        "messaging_or_recommendation": message.message
+                    })
+                except EVPEmbedmentMessage.DoesNotExist:
+                    touchpoint_data.append({
+                        "touchpoint": touchpoint.touchpoint_name,
+                        "messaging_or_recommendation": ""
+                    })
+            if touchpoint_data:
+                response_data.append({
+                    "stage": stage.stage_name,
+                    "touchpoints": touchpoint_data
+                })
+
+        return Response(response_data, status=status.HTTP_200_OK)
     
 from crawlbase import CrawlingAPI
 import json

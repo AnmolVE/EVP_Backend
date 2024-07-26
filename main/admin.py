@@ -1,24 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import (
-    NewUser,
-    Company,
-    Perception,
-    Loyalty,
-    Advocacy,
-    Attraction,
-    Influence,
-    Brand,
-    AttributesOfGreatPlace,
-    KeyThemes,
-    AudienceWiseMessaging,
-    SwotAnalysis,
-    Alignment,
-    MessagingHierarchyTabs,
-    MessagingHierarchyData,
-    EVPPromise,
-    EVPAudit,
-)
+from .models import *
 
 class NewUserAdmin(UserAdmin):
     model = NewUser
@@ -106,6 +88,18 @@ class EVPAuditAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "theme", "what_makes_this_credible", "where_do_we_need_to_stretch"]
     list_filter = ["company"]
 
+class EVPEmbedmentStageAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "stage_name"]
+    list_filter = ["company"]
+
+class EVPEmbedmentTouchpointAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "stage", "touchpoint_name"]
+    list_filter = ["company"]
+
+class EVPEmbedmentMessageAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "touchpoint", "message"]
+    list_filter = ["company"]
+
 admin.site.register(NewUser, NewUserAdmin)
 admin.site.register(Company, CompanyAdmin)
 admin.site.register(Perception, PerceptionAdmin)
@@ -123,3 +117,6 @@ admin.site.register(MessagingHierarchyTabs, MessagingHierarchyTabsAdmin)
 admin.site.register(MessagingHierarchyData, MessagingHierarchyDataAdmin)
 admin.site.register(EVPPromise, EVPPromiseAdmin)
 admin.site.register(EVPAudit, EVPAuditAdmin)
+admin.site.register(EVPEmbedmentStage, EVPEmbedmentStageAdmin)
+admin.site.register(EVPEmbedmentTouchpoint, EVPEmbedmentTouchpointAdmin)
+admin.site.register(EVPEmbedmentMessage, EVPEmbedmentMessageAdmin)
