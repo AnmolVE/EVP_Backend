@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-rh(7hhsl8q&viwv$sukponcegpb*owvmz($&29cbn&44lycv#j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '51.8.179.45']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '51.8.179.45', 'stimulai.eastus2.cloudapp.azure.com']
 
 
 # Application definition
@@ -96,8 +96,8 @@ SIMPLE_JWT = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -197,7 +197,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://stimulai.eastus2.cloudapp.azure.com:3000",
     "http://localhost:3000",
+    "http://51.8.179.45:3000",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # Send Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

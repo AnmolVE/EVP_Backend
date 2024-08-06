@@ -150,107 +150,29 @@ def save_data_to_database(final_data, company_name, user):
             facebook_info=final_data.get('Facebook URL and followers', ''),
             twitter_info=final_data.get('Twitter(X) URL and followers', ''),
             internal_comms_channels=final_data.get('Internal Comms Channels', ''),
+            exit_interview_feedback=final_data.get('Exit Interview Feedback Summary', ''),
+            employee_feedback_summary=final_data.get('Employee Feedback Summary', ''),
+            engagement_survey_results=final_data.get('Engagement Survey Result Summary', ''),
+            glassdoor_score=final_data.get('Glassdorr Score', ''),
+            online_forums_mentions=final_data.get('Online Forums Mentions', ''),
+            what_retains_talent=final_data.get('What Retains Talent', ''),
+            what_attracts_talent=final_data.get('What Attracts Talent', ''),
+            employee_value_proposition=final_data.get('Employee Value Proposition', ''),
+            culture_and_values=final_data.get('Culture and Values', ''),
+            purpose=final_data.get('Purpose', ''),
+            customer_value_proposition=final_data.get('Customer Value Proposition', ''),
+            vision=final_data.get('Vision', ''),
+            mission=final_data.get('Mission', ''),
+            brand_guidelines=final_data.get('Brand Guidelines', ''),
         )
-    
-    perception = Perception.objects.create(
-        user=user,
-        company=company,
-        exit_interview_feedback_summary=final_data.get('Exit Interview Feedback Summary', ''),
-        employee_feedback_summary=final_data.get('Employee Feedback Summary', ''),
-        engagement_survey_result_summary=final_data.get('Engagement Survey Result Summary', ''),
-        glassdoor_score=final_data.get('Glassdorr Score', ''),
-        online_forums_summary=final_data.get('Online Forums Summary', ''),
-    )
-
-    loyalty = Loyalty.objects.create(
-        user=user,
-        company=company,
-        average_tenure_of_employee=final_data.get('Average Tenure of Employees', ''),
-        net_promoter_score=final_data.get('Net Promoter Score', ''),
-        number_of_early_exits=final_data.get('Number of Early Exits', ''),
-        number_of_re_hires=final_data.get('Number of Rehires', ''),
-        what_retains_talent=final_data.get('What Retains Talent', ''),
-    )
-
-    advocacy = Advocacy.objects.create(
-        user=user,
-        company=company,
-        number_of_employees=final_data.get('Number of Employees', ''),
-        number_of_referrals=final_data.get('Number of Referrals', ''),
-        number_of_referrals_to_hires=final_data.get('Number of Referrals to Hires', ''),
-        esat_recommendability_score=final_data.get('ESAT Recommendability Score', ''),
-    )
-
-    attraction = Attraction.objects.create(
-        user=user,
-        company=company,
-        number_of_jobs_posted=final_data.get('Number of Jobs Posted', ''),
-        average_number_of_job_post_clicks=final_data.get('Average Number of Job Post Clicks', ''),
-        number_of_direct_hires=final_data.get('Number of Direct Hires', ''),
-        average_time_to_fill=final_data.get('Average Time to Fill', ''),
-        number_of_offers_made=final_data.get('Number of Offers Made', ''),
-        number_of_offers_accepted=final_data.get('Number of Offers Accepted', ''),
-        number_of_direct_applicants=final_data.get('Number of Direct Applications', ''),
-        number_of_hires=final_data.get('Number of Hires', ''),
-        what_attracts_talent=final_data.get('What Attracts Talent', ''),
-    )
-
-    influence = Influence.objects.create(
-        user=user,
-        company=company,
-        number_of_career_page_subscribers=final_data.get('Number of Career Page Subscribers', ''),
-        number_of_views=final_data.get('Number of Views', ''),
-        engagement=final_data.get('Engagement', ''),
-        number_of_media_mentions=final_data.get('Number of Media Mentions', ''),
-        number_of_awards=final_data.get('Number of Awards', ''),
-        summary_of_awards_or_recognition=final_data.get('Summary of Awards / Recognition', ''),
-    )
-
-    brand = Brand.objects.create(
-        user=user,
-        company=company,
-        employee_value_proposition=final_data.get('Employee Value Proposition', ''),
-        culture_and_values=final_data.get('Culture and Values', ''),
-        purpose=final_data.get('Purpose', ''),
-        customer_value_proposition=final_data.get('Customer Value Proposition', ''),
-        vision=final_data.get('Vision', ''),
-        mission=final_data.get('Mission', ''),
-        internal_comms_samples=final_data.get('Internal Comms Samples', ''),
-        external_comms_samples=final_data.get('External Comms Samples', ''),
-        brand_guidelines=final_data.get('Brand Guidelines', ''),
-    )
 
     company_vector = Company.objects.get(user=user, name=company_name)
     company_vector_serializer = CompanySerializer(company_vector)
 
     company_id = company_vector.id
 
-    perception_vector = Perception.objects.get(user=user, company=company_id)
-    perception_vector_serializer = PerceptionSerializer(perception_vector)
-
-    loyalty_vector = Loyalty.objects.get(user=user, company=company_id)
-    loyalty_vector_serializer = LoyaltySerializer(loyalty_vector)
-
-    advocacy_vector = Advocacy.objects.get(user=user, company=company_id)
-    advocacy_vector_serializer = AdvocacySerializer(advocacy_vector)
-
-    attraction_vector = Attraction.objects.get(user=user, company=company_id)
-    attraction_vector_serializer = AttractionSerializer(attraction_vector)
-
-    influence_vector = Influence.objects.get(user=user, company=company_id)
-    influence_vector_serializer = InfluenceSerializer(influence_vector)
-
-    brand_vector = Brand.objects.get(user=user, company=company_id)
-    brand_vector_serializer = BrandSerializer(brand_vector)
-
     whole_data = {
         "company_vector": company_vector_serializer.data,
-        "perception_vector": perception_vector_serializer.data,
-        "loyalty_vector": loyalty_vector_serializer.data,
-        "advocacy_vector": advocacy_vector_serializer.data,
-        "attraction_vector": attraction_vector_serializer.data,
-        "influence_vector": influence_vector_serializer.data,
-        "brand_vector": brand_vector_serializer.data,
     }
 
     formatted_string = json.dumps(whole_data)

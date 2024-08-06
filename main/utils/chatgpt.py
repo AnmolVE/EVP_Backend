@@ -11,6 +11,7 @@ from openai import AzureOpenAI
 AZURE_OPENAI_KEY = os.environ["AZURE_OPENAI_KEY"]
 AZURE_ENDPOINT = os.environ["AZURE_ENDPOINT"]
 AZURE_OPENAI_API_VERSION = os.environ["AZURE_OPENAI_API_VERSION"]
+AZURE_OPENAI_DEPLOYMENT = os.environ["AZURE_OPENAI_DEPLOYMENT"]
 
 chat_client = AzureOpenAI(
     azure_endpoint = AZURE_ENDPOINT, 
@@ -43,7 +44,7 @@ def get_data_from_chatgpt_1(company_name, fields_to_query_with_chatgpt_1):
     ]
 
     completion = chat_client.chat.completions.create(
-    model="STIMULAIGPT4O",
+    model=AZURE_OPENAI_DEPLOYMENT,
     response_format={ "type": "json_object" },
     messages = message_text,
     temperature=0.3,
@@ -66,7 +67,7 @@ def get_data_from_chatgpt_2(company_name, snippet_data, query_params):
     print(prompt)
 
     completion = chat_client.chat.completions.create(
-    model="STIMULAIGPT4O",
+    model=AZURE_OPENAI_DEPLOYMENT,
     messages = [
         {
             "role":"system",

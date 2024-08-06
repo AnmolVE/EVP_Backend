@@ -25,7 +25,37 @@ class NewUserAdmin(UserAdmin):
     readonly_fields = ('created_at', 'updated_at')
 
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", 'name', 'headquarters', 'established_date', 'about_the_company', 'industry', 'company_financials', 'company_history', 'top_3_competitors', 'number_of_employees', 'number_of_geographies', 'linked_info', 'instagram_info', 'tiktok_info', 'facebook_info', 'twitter_info', 'internal_comms_channels']
+    list_display = ["id",
+                    "user",
+                    'name',
+                    'headquarters',
+                    'established_date',
+                    'about_the_company',
+                    'industry',
+                    'company_financials',
+                    'company_history',
+                    'top_3_competitors',
+                    'number_of_employees',
+                    'number_of_geographies',
+                    'linked_info',
+                    'instagram_info',
+                    'tiktok_info',
+                    'facebook_info',
+                    'twitter_info',
+                    'internal_comms_channels',
+                    'exit_interview_feedback',
+                    'employee_feedback_summary',
+                    'engagement_survey_results',
+                    'glassdoor_score',
+                    'online_forums_mentions',
+                    'what_retains_talent',
+                    'what_attracts_talent',
+                    'employee_value_proposition',
+                    'culture_and_values',
+                    'vision',
+                    'mission',
+                    'brand_guidelines',
+                ]
     list_filter = ['industry']
 
 class PerceptionAdmin(admin.ModelAdmin):
@@ -80,6 +110,14 @@ class MessagingHierarchyDataAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "main_theme", "pillar_1", "pillar_2", "pillar_3", "tagline"]
     list_filter = ["company"]
 
+class CreativeDirectionAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "creative_direction_data"]
+    list_filter = ["company"]
+
+class EVPDefinitionAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "theme", "description", "what_it_means", "what_it_does_not_mean"]
+    list_filter = ["company"]
+
 class EVPPromiseAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "theme", "what_makes_this_theme_distinctive", "what_employees_can_expect", "what_is_expected_of_employees"]
     list_filter = ["company"]
@@ -100,6 +138,14 @@ class EVPEmbedmentMessageAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "touchpoint", "message"]
     list_filter = ["company"]
 
+class EVPHandbookAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "handbook_data"]
+    list_filter = ["company"]
+
+class EVPStatementAndPillarsAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "evp_statement_document", "evp_statement_thumbnail", "evp_statement_text"]
+    list_filter = ["company"]
+
 admin.site.register(NewUser, NewUserAdmin)
 admin.site.register(Company, CompanyAdmin)
 admin.site.register(Perception, PerceptionAdmin)
@@ -115,8 +161,12 @@ admin.site.register(SwotAnalysis, SwotAnalysisAdmin)
 admin.site.register(Alignment, AlignmentAdmin)
 admin.site.register(MessagingHierarchyTabs, MessagingHierarchyTabsAdmin)
 admin.site.register(MessagingHierarchyData, MessagingHierarchyDataAdmin)
+admin.site.register(CreativeDirection, CreativeDirectionAdmin)
+admin.site.register(EVPDefinition, EVPDefinitionAdmin)
 admin.site.register(EVPPromise, EVPPromiseAdmin)
 admin.site.register(EVPAudit, EVPAuditAdmin)
 admin.site.register(EVPEmbedmentStage, EVPEmbedmentStageAdmin)
 admin.site.register(EVPEmbedmentTouchpoint, EVPEmbedmentTouchpointAdmin)
 admin.site.register(EVPEmbedmentMessage, EVPEmbedmentMessageAdmin)
+admin.site.register(EVPHandbook, EVPHandbookAdmin)
+admin.site.register(EVPStatementAndPillars, EVPStatementAndPillarsAdmin)

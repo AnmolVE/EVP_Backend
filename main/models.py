@@ -57,6 +57,20 @@ class Company(models.Model):
     facebook_info = models.TextField(null=True, blank=True)
     twitter_info = models.TextField(null=True, blank=True)
     internal_comms_channels = models.TextField(null=True, blank=True)
+    exit_interview_feedback = models.TextField(null=True, blank=True)
+    employee_feedback_summary = models.TextField(null=True, blank=True)
+    engagement_survey_results = models.TextField(null=True, blank=True)
+    glassdoor_score = models.TextField(null=True, blank=True)
+    online_forums_mentions = models.TextField(null=True, blank=True)
+    what_retains_talent = models.TextField(null=True, blank=True)
+    what_attracts_talent = models.TextField(null=True, blank=True)
+    employee_value_proposition = models.TextField(null=True, blank=True)
+    culture_and_values = models.TextField(null=True, blank=True)
+    purpose = models.TextField(null=True, blank=True)
+    customer_value_proposition = models.TextField(null=True, blank=True)
+    vision = models.TextField(null=True, blank=True)
+    mission = models.TextField(null=True, blank=True)
+    brand_guidelines = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -218,6 +232,25 @@ class MessagingHierarchyData(models.Model):
     def __str__(self):
         return f"{self.company.name} - MessagingHierarchyData"
     
+class CreativeDirection(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    creative_direction_data = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company.name} - Creative Direction"
+    
+class EVPDefinition(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    theme = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    what_it_means = models.TextField(null=True, blank=True)
+    what_it_does_not_mean = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.theme}"
+    
 class EVPPromise(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -264,3 +297,22 @@ class EVPEmbedmentMessage(models.Model):
 
     def __str__(self):
         return f"{self.touchpoint.stage.stage_name} - {self.touchpoint.touchpoint_name}"
+    
+class EVPHandbook(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    handbook_data = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company.name} - EVPHandbook"
+    
+class EVPStatementAndPillars(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    evp_statement_document = models.FileField(upload_to="evp_statement_documents/", null=True, blank=True)
+    evp_statement_thumbnail = models.ImageField(upload_to="evp_statement_thumbnails/", null=True, blank=True)
+    evp_statement_text = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company.name} - Statement and Pillars"
+    

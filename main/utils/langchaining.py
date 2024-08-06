@@ -13,6 +13,8 @@ from ..models import (
     SwotAnalysis,
     Alignment,
     MessagingHierarchyTabs,
+    CreativeDirection,
+    EVPDefinition,
     EVPPromise,
     EVPAudit,
     EVPEmbedmentStage,
@@ -27,6 +29,8 @@ from ..serializers import (
     SwotAnalysisSerializer,
     AlignmentSerializer,
     MessagingHierarchyTabsSerializer,
+    CreativeDirectionSerializer,
+    EVPDefinitionSerializer,
     EVPPromiseSerializer,
     EVPAuditSerializer,
 )
@@ -59,12 +63,14 @@ chat_client = AzureOpenAI(
 langchain_query = {
 "Headquarters": """
         Search for the primary location of the company's headquarters. Look for terms like 'head office,' 'corporate office,' or 'main office location.' Identify the city, state, and country where the company's headquarters is located.
+        The response should appear as city name, country name.
 """,
 "Established Date": """
-        Find the date or year the company was established. Look for phrases like 'founded in,' 'established in,' or 'incorporated on.' Identify the specific year or date of the company's founding
+        Find the date or year the company was established. Look for phrases like 'founded in,' 'established in,' or 'incorporated on.' Identify the specific year or date of the company's founding.
+        The response should appear in mm/dd/yyyy format
 """,
 "About the company": """
-        Create a summary which gives the description about the company.
+        Create a summary which gives the description about the company. Focus on how the company describes itself. Examples include "professional services firm" or "automobile company" or "global consulting company". Include a line on their product or services. Include a line on their clientele. 
 """,
 "Industry": """
         Identify the industry or sector the company operates in. Use terms like 'industry sector,' 'business sector,' or 'industry classification.' Specify the primary market or sector the company is associated with.
@@ -85,9 +91,9 @@ langchain_query = {
                 Identify the number of geographical locations where the company has operations. Search for phrases like 'number of locations,' 'geographical presence,' or 'global footprint.' List the distinct regions or countries where the company is active.
 """,
 "LinkedIn URL and followers": """
-                Search for information on the company's LinkedIn profile. Use keywords like 'LinkedIn profile,' 'LinkedIn company page,' or 'LinkedIn followers.' Provide the URL, follower count, and a summary of the company's activity on LinkedIn.
+                Search for information on the company's LinkedIn profile. Use keywords like 'LinkedIn profile,' 'LinkedIn company page,' or 'LinkedIn followers.' Provide the URL, follower count, and a summary of the company's activity on LinkedIn. Include the frequency of posts, the average number of likes per post, and the average number of comments per post.
 """,
-"Instagram UR and followers": """
+"Instagram URL and followers": """
                 Find information on the company's Instagram profile. Use keywords like 'Instagram profile,' 'Instagram company page,' or 'Instagram followers.' Provide the URL, follower count, and a summary of the company's activity on Instagram.
 """,
 "Tiktok URL and followers": """
@@ -100,118 +106,49 @@ langchain_query = {
                 Find information on the company's (X)  Twitter profile. Use keywords like 'Twitter profile,' 'Twitter page,' or 'Twitter followers.' Provide the URL, follower count, and a summary of the company's activity on Twitter.
 """,
 "Internal Comms Channels": """
-
+                Intranet, emails, newsletter, townhalls, collaboration platform like Teams / Slack
 """,
 "Exit Interview Feedback Summary": """
-                Find feedback from exited employees about the company. Use keywords like 'exit feedback,' 'leaving form,' or 'exit interview'. Provide a summary of common sentiments and key points.
+                Find feedback from exited employees about the company. Use keywords like 'exit feedback,' 'leaving form,' or 'exit interview'. Provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarize the actual feedback. 
 """,
 "Employee Feedback Summary": """
-                Find feedback from current or former employees about the company. Use keywords like 'employee feedback,' 'staff opinions,' or 'employee reviews' or 'HR complaints'.  Provide a summary of common sentiments and key points from employee feedback.
+                Find feedback from current or former employees about the company. Use keywords like 'employee feedback,' 'staff opinions,' or 'employee reviews' or 'HR complaints'.  Provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarise the actual feedback.
 """,
 "Engagement Survey Result Summary": """
-                Search for results from employee engagement surveys. Look for terms like 'engagement survey results,' 'employee satisfaction survey,' or 'engagement metrics.' or 'ESat survey'. Summarize the key findings and overall engagement levels of the employees.
+                Search for results from employee engagement surveys in the documents. Look for terms like 'engagement survey results,' 'employee satisfaction survey,' or 'engagement metrics.' or 'ESat survey' and provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarize the actual feedback.
 """,
 "Glassdorr Score": """
-                Locate the company's Glassdoor score. Use terms like 'Glassdoor score,' 'Glassdoor rating,' or 'employee reviews score.' Provide the current rating and a summary of key feedback from reviews.
+                Locate the company's Glassdoor score. Use terms like 'Glassdoor score,' 'Glassdoor rating,' or 'employee reviews score.' Provide the current rating and a summary of  how many reviews are being considered. Do not summarize the actual reviews.
 """,
-"Online Forums Summary": """
-                Find online mentions of the company name and summarize the feedback about the company as an employer. Use keywords like 'feedback,' 'opinions,' 'reviews,' and 'perception.' Provide a summary of common sentiments and key points from various sources. Focus on recurring themes, both positive and negative, and highlight any specific comments that illustrate the overall perception of the company as an employer.
-""",
-"Average Tenure of Employees": """
-                Locate the average tenure of employees in the company. Use terms like 'average tenure,' 'employee tenure,' or 'tenure length.' Calculate the average tenure of the employees.
-""",
-"Net Promoter Score": """
-                Locate phrases like 'NPS' or "Net Promoter Score" in documents.
-""",
-"Number of Early Exits": """
-                Locate the number of early exits, specifically employees who left within 90 days of being hired. Use keywords like 'early exits,' 'exits within 90 days,' or 'new employee turnover.' Provide the count of early exits.
-""",
-"Number of Rehires": """
-                Locate the number of REHIRES or the number of people who left the company and rejoined the company. Use keywords like 'Boomerangs' 'returning employees' 'second life' or 'comeback'
+"Online Forums Mentions": """
+                Pull verbatim online mentions of the company name and  the feedback about the company as an employer. Use keywords like 'feedback,' 'opinions,' 'reviews,' and 'perception. Provide the names of forums and how many mentions considered.
 """,
 "What Retains Talent": """
                 Identify the top three reasons why talent tends to stay with the company. Search the document for key phrases such as 'What Retains Talent,' 'Why Talent Chooses Us,' or similar terms. Summarize the common themes and specific factors that contribute to employee retention, highlighting any notable policies, benefits, or cultural aspects that are frequently mentioned.
 """,
-"Number of Referrals": """
-                Find the total number of employee referrals received by the company. Use keywords like 'employee referrals,' 'referral count,' or 'referrals received.' Provide the count of referrals.
-""",
-"Number of Referrals to Hires": """
-                Locate the number of hires made through employee referrals. Use keywords like 'referral hires,' 'hires through referrals,' or 'referral-to-hire ratio.' Provide the count of referral-based hires.
-""",
-"ESAT Recommendability Score": """
-                Find the Employee Satisfaction (ESAT) recommendability score for the company. Use terms like 'ESAT score,' 'employee satisfaction score,' or 'recommendability score.' Provide the ESAT score and a brief explanation
-""",
-"Number of Jobs Posted": """
-                Find the total number of job postings listed by the company. Use terms like 'job postings,' 'job listings,' or 'open positions.' Provide the count of current job postings.
-""",
-"Average Number of Job Post Clicks": """
-                Search for the average number of clicks job postings received for the Company. Look for metrics such as 'job post clicks,' 'average job clicks,' and 'click-through rate (CTR) for job postings.' Summarize the average number of clicks and what this indicates about candidate interest and engagement.
-""",
-"Number of Direct Hires": """
-                Find the number of direct hires by the company. Use terms like 'direct hires,' 'internal hires,' or 'company hires.' Provide the count of employees hired directly by the company.
-""",
-"Average Time to Fill": """
-                Locate the average time-to-fill for job positions in the company. Use keywords like 'time-to-fill,' 'hiring time,' or 'recruitment duration.' Provide the average duration from job posting to hiring.
-""",
-"Number of Offers Made": """
-                Find the total number of job offers made by the company. Use terms like 'number of offers,' 'job offers made,' or 'offers extended.' Provide the count of job offers given by the company.
-""",
-"Number of Offers Accepted": """
-                Locate the number of job offers accepted by candidates. Use terms like 'offers accepted,' 'job offers taken,' or 'accepted offers.' Provide the count of accepted job offers.
-""",
-"Number of Direct Applications": """
-                Search for the total number of direct job applications received by the company. Use keywords like 'direct applications,' 'job applications received,' or 'applications count.' Provide the count of direct applications.
-""",
-"Number of Hires": """
-                Search for the total number of new hires in the company. Use terms like 'number of hires,' 'new employees,' or 'hires count.' Provide the count of new hires.
-""",
 "What Attracts Talent": """
                 Identify the key factors that attract talent to the company. Use keywords like 'talent attraction,' 'reasons to join,' or 'employment appeal.' Summarize the main attributes that make the company appealing to potential employees.
 """,
-"Number of Career Page Subscribers": """
-                Locate information on the number of subscribers to the company's careers page. Search for terms like 'careers page subscribers,' 'job alert subscribers,' or 'careers newsletter.' Provide the latest subscriber count.
-""",
-"Number of Views": """
-                Find information on the number of views or impressions for company's social media posts. Use terms like 'social media views,' 'social media impressions,' and 'post views.' Provide a summary of the total views and how it reflects the reach and visibility of their social media content.
-""",
-"Engagement": """
-                Search for data on social media engagement for the Company. Use keywords such as 'social media engagement,' 'post engagement,' 'likes, comments, shares,' and 'audience interaction.' Summarize the main forms of engagement and their impact on the company's social media presence.
-""",
-"Number of Media Mentions": """
-                Locate the number of media mentions for the company. Use keywords like 'media mentions,' 'press coverage,' or 'news mentions.' Provide the count of media mentions and highlight significant coverage.
-""",
-"Number of Awards": """
-                Find the number of awards the company has won. Use terms like 'awards won,' 'number of awards,' or 'accolades received.' Provide the count of awards and notable awards won.
-""",
-"Summary of Awards / Recognition": """
-                Extract information on the company's rewards and recognition programs. Include details on performance awards, incentive programs, and employee feedback on these programs.
-""",
 "Employee Value Proposition": """
-                Find the Employee Value Proposition (EVP):
+                Find if there is an existing Employee Value Proposition (EVP)and paste the actual statement here
 """,
 "Culture and Values": """
-                Search for information on the company's culture and values. Use terms like 'company culture,' 'organizational values,' or 'core values.' Summarize the key aspects of the workplace culture and the guiding principles of the company.
+                Locate the culture and or values of the company from the secondary research section and paste here for user to validate
 """,
 "Purpose": """
-                Locate the purpose of the company. Use keywords like 'company purpose,' 'organizational purpose,' or 'mission.' Provide a summary of why the company exists and its core guiding principles.
+                Locate the purpose of the company from the secondary research section and paste here for user to validate
 """,
 "Customer Value Proposition": """
-                Locate information on the Company's customer value proposition. Search for terms like 'customer value proposition,' 'value proposition statement,' 'unique selling proposition,' and 'competitive advantage.' Summarize the key benefits they offer to customers and how they differentiate from competitors.
+                Locate the tagline / CVP of the company from the secondary research section and paste it as is for user to validate
 """,
 "Vision": """
-                Find the company's vision statement. Search for terms like 'company vision,' 'future aspirations,' or 'long-term goals.' Summarize the company's desired future state and long-term aspirations.
+                Locate the vision statement of the company from the secondary research section and paste here for user to validate
 """,
 "Mission": """
-                Locate the company's mission statement. Use keywords like 'company mission,' 'mission statement,' or 'core objectives.' Provide a summary of the company’s main goals and approach to achieving its purpose.
-""",
-"Internal Comms Samples": """
-                Locate samples of internal communications for the Company. Use search terms like 'internal communications examples,' 'employee communications,' 'internal newsletters,' and 'company intranet communications.' Summarize the key methods and types of internal communications used.
-""",
-"External Comms Samples": """
-                Find examples of external communications for the Company. Search using terms such as 'external communications examples,' 'public relations samples,' 'press releases,' and 'public announcements.' Summarize the main types and characteristics of their external communications.
+                Locate the mission statement of the company from the secondary research section and paste here for user to validate
 """,
 "Brand Guidelines": """
-                Locate the company's brand guidelines. Search for terms like 'brand guidelines,' 'branding rules,' or 'brand standards.' Fetch Logo, Brand Color, Imagery/Photography, Brand Personality, Tone, Voice, Icons or Iconography, FONT, Typerface, Icons, Iconography.
+                Locate the colors, imagery guidelines, logo guidelines
 """
 }
 
@@ -280,7 +217,7 @@ def query_with_langchain(company_name):
         print(prompt)
 
         completion = chat_client.chat.completions.create(
-        model="STIMULAIGPT4O",
+        model=AZURE_OPENAI_DEPLOYMENT,
         messages = [
             {
                 "role":"system",
@@ -457,7 +394,7 @@ def get_develop_data_from_vector_database(company_name, user):
         print("*************************************************************************************************************")
 
         completion = chat_client.chat.completions.create(
-        model="STIMULAIGPT4O",
+        model=AZURE_OPENAI_DEPLOYMENT,
         messages = [
             {
                 "role":"system",
@@ -495,7 +432,7 @@ def get_develop_data_from_vector_database(company_name, user):
         print("*************************************************************************************************************")
 
         completion = chat_client.chat.completions.create(
-        model="STIMULAIGPT4O",
+        model=AZURE_OPENAI_DEPLOYMENT,
         messages = [
             {
                 "role":"system",
@@ -533,7 +470,7 @@ def get_develop_data_from_vector_database(company_name, user):
         print("*************************************************************************************************************")
 
         completion = chat_client.chat.completions.create(
-        model="STIMULAIGPT4O",
+        model=AZURE_OPENAI_DEPLOYMENT,
         messages = [
             {
                 "role":"system",
@@ -642,7 +579,7 @@ def get_dissect_data_from_vector_database(company_name, user):
         ]
 
         completion = chat_client.chat.completions.create(
-        model="STIMULAIGPT4O",
+        model=AZURE_OPENAI_DEPLOYMENT,
         messages = message_text,
         temperature=0.7,
         max_tokens=4000,
@@ -691,7 +628,7 @@ def get_dissect_data_from_vector_database(company_name, user):
         """
 
         completion = chat_client.chat.completions.create(
-        model="STIMULAIGPT4O",
+        model=AZURE_OPENAI_DEPLOYMENT,
         messages = [
                 {
                     "role":"system",
@@ -743,7 +680,7 @@ def get_dissect_data_from_vector_database(company_name, user):
         ]
 
         completion = chat_client.chat.completions.create(
-        model="STIMULAIGPT4O",
+        model=AZURE_OPENAI_DEPLOYMENT,
         messages = message_text,
         temperature=0.1,
         max_tokens=4000,
@@ -776,9 +713,24 @@ def get_design_data_from_database(company_name, user):
 
     formatted_string = json.dumps(whole_data)
 
-    query1 = """Identify 4 themes that are unique about the company and will help it stand out as an employer. Focus on themes that are different from standard good HR practices. These themes should be believable about the company but also have an element of aspiration, which means that these could be things the company aspires towards and may not have completely achieve yet.
+    query = """Identify 4 themes that are unique about the company and will help it stand out as an employer. Focus on themes that are different from standard good HR practices. These themes should be believable about the company but also have an element of aspiration, which means that these could be things the company aspires towards and may not have completely achieve yet.
                 Rank these themes from most relevant to least relevant and don't include numbers or anything just headings and description.
             """
+    
+    RESPONSE_JSON = {
+            "themes": [
+            {
+                "id": "1",
+                "tab_name": "heading1",
+                "tabs_data": "description1",
+            },
+            {
+                "id": "2",
+                "tab_name": "heading2",
+                "tabs_data": "description2",
+            },
+        ]
+    }
 
     prompt = f"""
         Information: {formatted_string}.
@@ -786,19 +738,19 @@ def get_design_data_from_database(company_name, user):
         Analyze the complete information above.
         After analyzing it, give the response in json format.
 
-        Question: {query1}
+        Question: {query}
 
-        Make sure to format the response in the json format where headings as the keys and description as the value of the response.
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Replace headings and description with the actual value.
         """
 
     completion = chat_client.chat.completions.create(
-    model="STIMULAIGPT4O",
+    model=AZURE_OPENAI_DEPLOYMENT,
     response_format={ "type": "json_object" },
     messages = [
         {
             "role":"system",
-            "content":"""You are a helpful expert research assistant designed to output JSON. You will be shown the given information.
-                            After analyzing the complete information, your task is to answer the question using only given information.
+            "content":"""You are a helpful expert research assistant.
                         """
         },
         {
@@ -816,24 +768,17 @@ def get_design_data_from_database(company_name, user):
         print(f"Failed to parse JSON response: {e}")
         json_response = {}
 
-    for key, value in json_response.items():
-        MessagingHierarchyTabs.objects.create(
-            user=user,
-            company = company,
-            tab_name = key,
-            tabs_data = value
-        )
-    messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company_id)
-    serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs, many=True)
-    return serializer.data
+    return json_response["themes"]
 
-def get_tagline(company_name, user, main_theme, pillar_1, pillar_2, pillar_3, combined_tabs_data):
-    company = Company.objects.get(user=user, name=company_name)
-    company_id = company.id
-
-    if pillar_1 and pillar_2 and pillar_3:
+def get_tagline(
+        main_theme,
+        combined_tabs_data,
+        pillars
+):
+    supporting_pillars = ", ".join(pillars)
+    if len(pillars) > 0:
         query = f"""
-                    Act like an advertising expert. Now create a narrative. A narrative is a combination of a Tagline and advertising body copy. The logic for the narrative is that the {main_theme} will become the main theme of that narrative. The remaining {pillar_1} , {pillar_2} and {pillar_3} become secondary or supporting pillars. 
+                    Act like an advertising expert. Now create a narrative. A narrative is a combination of a Tagline and advertising body copy. The logic for the narrative is that the {main_theme} will become the main theme of that narrative. The remaining {supporting_pillars} become secondary or supporting pillars. 
                     This is how the advertising copy of the narrative will flow. Don't write the subheads below, but follow the instructions.
                     Start with a hook or an engaging statement that captures the reader's attention.
                     Provide a clear and concise explanation of the main theme.
@@ -866,7 +811,7 @@ def get_tagline(company_name, user, main_theme, pillar_1, pillar_2, pillar_3, co
         """
 
     completion = chat_client.chat.completions.create(
-    model="STIMULAIGPT4O",
+    model=AZURE_OPENAI_DEPLOYMENT,
     messages = [
         {
             "role":"system",
@@ -898,7 +843,7 @@ def get_creative_direction_from_chatgpt(brand_guidelines, tagline):
              """
 
     completion = chat_client.chat.completions.create(
-    model="STIMULAIGPT4O",
+    model=AZURE_OPENAI_DEPLOYMENT,
     messages = [
         {
             "role":"system",
@@ -944,7 +889,7 @@ def get_evp_promise_from_chatgpt(company_name, user, themes_data):
              """
 
     completion = chat_client.chat.completions.create(
-    model="STIMULAIGPT4O",
+    model=AZURE_OPENAI_DEPLOYMENT,
     response_format={ "type": "json_object" },
     messages = [
         {
@@ -1020,7 +965,7 @@ def get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data
              """
     
     completion = chat_client.chat.completions.create(
-    model="STIMULAIGPT4O",
+    model=AZURE_OPENAI_DEPLOYMENT,
     response_format={ "type": "json_object" },
     messages = [
         {
@@ -1059,6 +1004,82 @@ def get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data
     evp_audit = EVPAudit.objects.filter(user=user, company=company_id)
     serializer = EVPAuditSerializer(evp_audit, many=True)
     return serializer.data
+
+def get_evp_definition_from_chatgpt(company_name,analysis_data, alignment_data, four_themes):
+    company = Company.objects.get(name=company_name)
+    company_id = company.id
+
+    RESPONSE_JSON = {
+        "Theme": {
+            "Description": "Evaluate  what aspects of this theme are believable about the company. Look for elements that are true today and being experienced by employees. ",
+            "What it means": "Evaluate  what aspects of this theme are not yet fully believable and can be considered 'aspirational' by the company. Look for elements that are not necessarily 100% true today or being fully experienced by employees but are elements that the company would like to aspire towards.",
+            "What it does not mean": ""
+        }
+    }
+
+    prompt = f"""
+                First analyze the given datasets below and return the data in json format:
+                Analyze the Analysis Data.
+
+                Analysis Data : {analysis_data}
+
+                Now analyze the Alignment Data.
+
+                Alignment Data : {alignment_data}
+
+                Four Themes Available: {four_themes}
+
+                For each of the four themes, provide a detailed messaging overview that includes response for the below query:
+
+                RESPONSE_JSON : {RESPONSE_JSON}
+
+                The json format will contain keys same as the RESPONSE_JSON and value as the response to the query and replace Theme with the actual theme name.
+                Don't include list in the response and don't include numbers or anything, I just want keys and the description.
+
+                Make sure to format your response like RESPONSE_JSON and use it as a guide.
+             """
+    
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are an expert advertising creative art director.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+    return json_response
+
+    # for key,value in json_response.items():
+    #     theme = key
+    #     what_makes_this_credible = value["What makes this credible"]
+    #     where_do_we_need_to_stretch = value["Where do we need to stretch"]
+
+    #     EVPDefinition.objects.create(
+    #         user=user,
+    #         company = company,
+    #         theme = theme,
+    #         what_makes_this_credible = what_makes_this_credible,
+    #         where_do_we_need_to_stretch = where_do_we_need_to_stretch,
+    #     )
+
+    # evp_audit = EVPDefinition.objects.filter(user=user, company=company_id)
+    # serializer = EVPDefinitionSerializer(evp_audit, many=True)
+    # return serializer.data
 
 all_touchpoint_prompts = {
 "Careers Website": """Create content for the Careers section of our website that highlights our company culture, benefits, and career growth opportunities. Include testimonials from current employees and visuals of our work environment.
@@ -1166,7 +1187,7 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, all_touchPoints, top
                 prompt = base_prompt + information_to_fetch.format(all_touchpoint_prompts[touchpoint])
 
                 completion = chat_client.chat.completions.create(
-                model="STIMULAIGPT4O",
+                model=AZURE_OPENAI_DEPLOYMENT,
                 messages = [
                     {
                         "role":"system",
@@ -1206,6 +1227,71 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, all_touchPoints, top
     
     return json_data
 
+def get_evp_handbook_data_from_chatgpt(company_name, user, top_4_themes_data, messaging_hierarchy_data, evp_promise_data, evp_audit_data):
+
+    prompt = f"""
+                First analyze the Top 4 Themes Data :
+
+                Top 4 Themes Data : {top_4_themes_data}
+
+                Now analyze the Messaging Hierarchy Data :
+
+                Messaging Hierarchy Data : {messaging_hierarchy_data}
+
+                Now analyze the EVP Promise Data :
+
+                EVP Promise Data : {evp_promise_data}
+
+                Now analyze the EVP Audit Data :
+
+                EVP Audit Data : {evp_audit_data}
+
+                After analyzing the complete given data, generate the data for below :
+
+                Overview
+                a.       Introduction - one paragraph on what is this EVP exercise about
+                c. Chairman's Letter - email for employees from Ashish Agrawal introducing the EVP
+                b.       Journey - Summarises the EVP Narrative section in 3 paragraphs or less 
+                c.       Definition of terms - All technical terms used in the all sections
+                d.       The EVP - The Positioning Statement ( using tagline ) and 3 Pillars
+                e.       The EVP Promise table - create a two line definition and then place the EVP Promise table
+                f.        Creative Direction - rationale for why this creative direction, imagery, and colore palette has been used
+                g.       Brand voice - what is the brand voice and personality of the EVP
+                
+                2-      Design Elements
+                Typerface - Which font is recommended?
+                i.      Usage examples
+                b.       Colours - exact shades of colours
+                c.       Imagery - examples of images used already and suggested images
+                
+                3-      Content
+                a.       Copy - The main body copy for the EVP positioning
+                b.       Do's and Don't's for the ads
+                c.       Copy Bank ( Job Ads, Emails)
+                d.       Guidelines for writing for  social media
+                e.       Employee Testimonial Guide - how should these be created
+                4-      Execution Plan
+             """
+
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are an expert in fetching information from the given data.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    return chat_response
+
 import chromadb
 
 def testing_data(collection):
@@ -1240,7 +1326,7 @@ def testing_data(collection):
         )
 
         completion = chat_client.chat.completions.create(
-        model="STIMULAIGPT4O",
+        model=AZURE_OPENAI_DEPLOYMENT,
         messages = [
                 {
                     "role":"system",

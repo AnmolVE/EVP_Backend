@@ -99,6 +99,16 @@ class AlignmentSerializer(serializers.ModelSerializer):
         model = Alignment
         fields = "__all__"
 
+class CreativeDirectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CreativeDirection
+        fields = "__all__"
+
+class EVPDefinitionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EVPDefinition
+        fields = "__all__"
+
 class EVPPromiseSerializer(serializers.ModelSerializer):
     class Meta:
         model = EVPPromise
@@ -112,4 +122,14 @@ class EVPAuditSerializer(serializers.ModelSerializer):
 class EVPEmbedmentMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = EVPEmbedmentMessage
+        fields = "__all__"
+
+class EVPHandbookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EVPHandbook
+        fields = "__all__"
+
+class EVPStatementAndPillarsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EVPStatementAndPillars
         fields = "__all__"

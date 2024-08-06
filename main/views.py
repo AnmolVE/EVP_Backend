@@ -49,11 +49,19 @@ from .utils.langchaining import (
     get_dissect_data_from_vector_database,
     get_design_data_from_database, get_tagline,
     get_creative_direction_from_chatgpt,
+    get_evp_definition_from_chatgpt,
     get_evp_promise_from_chatgpt,
     get_evp_audit_from_chatgpt,
     get_evp_embedment_data_from_chatgpt,
+    get_evp_handbook_data_from_chatgpt,
 )
 from .utils.email_send import send_email_to_users
+
+chat_client = AzureOpenAI(
+    azure_endpoint = AZURE_ENDPOINT, 
+    api_key=AZURE_OPENAI_KEY,  
+    api_version=AZURE_OPENAI_API_VERSION
+)
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -282,11 +290,22 @@ class DesignAPIView(APIView):
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        company_id = company.id
 
-        if MessagingHierarchyTabs.objects.filter(user=user, company=company_id).exists():
-            messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company_id)
+        if MessagingHierarchyTabs.objects.filter(user=user, company=company).exists():
+            messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company)
+            serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        themes_data = request.data.get("themes_data")
+        if themes_data:
+            for data in themes_data:
+                MessagingHierarchyTabs.objects.create(
+                    company=company,
+                    user=user,
+                    tab_name=data["tab_name"],
+                    tabs_data=data["tabs_data"]
+                )
+            messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company)
             serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
@@ -968,11 +987,6 @@ class TaglineAPIView(APIView):
 
         main_theme = request.data.get("main_theme")
         pillars = request.data.get("pillars", [])
-        pillar_1 = pillar_2 = pillar_3 = None
-        if len(pillars) >= 3:
-            pillar_1 = pillars[0]
-            pillar_2 = pillars[1]
-            pillar_3 = pillars[2]
         tagline = request.data.get("tagline")
 
         if MessagingHierarchyData.objects.filter(user=user, company=company_id).exists():
@@ -985,26 +999,45 @@ class TaglineAPIView(APIView):
                 user=user,
                 company = company,
                 main_theme = main_theme,
-                pillar_1 = pillar_1,
-                pillar_2 = pillar_2,
-                pillar_3 = pillar_3,
+                pillar_1 = pillars[0] if len(pillars) > 0 else None,
+                pillar_2 = pillars[1] if len(pillars) > 1 else None,
+                pillar_3 = pillars[2] if len(pillars) > 2 else None,
                 tagline = tagline,
             )
+            print(messaging_hierarchy_data.pillar_1)
+            print(messaging_hierarchy_data.pillar_2)
+            print(messaging_hierarchy_data.pillar_3)
             messaging_hierarchy_data.save()
             serializer = MessagingHierarchyDataSerializer(messaging_hierarchy_data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         else:
             tabs_data_instances = MessagingHierarchyTabs.objects.filter(user=user, company=company_id)
-            combined_tabs_data = ""
-            for instance in tabs_data_instances:
-                combined_tabs_data = combined_tabs_data + " " + instance.tabs_data
+            combined_tabs_data = " ".join(instance.tabs_data for instance in tabs_data_instances)
 
-        if pillar_1 and pillar_2 and pillar_3:
-            tagline = get_tagline(company_name, user, main_theme, pillar_1, pillar_2, pillar_3, combined_tabs_data)
-        else:
-            tagline = get_tagline(company_name, main_theme, combined_tabs_data)
+        tagline = get_tagline(
+            main_theme,
+            combined_tabs_data,
+            pillars,
+        )
         return Response({"tagline": tagline})
+    
+class MessagingHierarchySpecificAPIView(APIView):
+    def get(self, request, company_name):
+        # user = request.user
+
+        try:
+            company = Company.objects.get(name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            messaging_hierarchy = MessagingHierarchyData.objects.get(company=company)
+        except MessagingHierarchyData.DoesNotExist:
+            return Response({"error": "Messaging Hierarchy Data does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = MessagingHierarchyDataSerializer(messaging_hierarchy)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CreativeDirectionAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1016,6 +1049,26 @@ class CreativeDirectionAPIView(APIView):
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            creative_direction = CreativeDirection.objects.get(user=user, company=company)
+        except CreativeDirection.DoesNotExist:
+            creative_direction = None
+
+        if creative_direction:
+            serializer = CreativeDirectionSerializer(creative_direction)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        creative_direction_data = request.data.get("creative_direction_data")
+
+        if creative_direction_data:
+            creative_direction = CreativeDirection.objects.create(
+                company=company,
+                user=user,
+                creative_direction_data=creative_direction_data,
+            )
+            serializer = CreativeDirectionSerializer(creative_direction)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         try:
             brand = Brand.objects.get(user=user, company=company)
@@ -1031,11 +1084,56 @@ class CreativeDirectionAPIView(APIView):
         tagline = messaging_hierarchy_data.tagline
 
         try:
-            creative_direction_from_chatgpt = get_creative_direction_from_chatgpt(brand_guidelines, tagline)
+            creative_direction_from_chatgpt = get_creative_direction_from_chatgpt(
+                brand_guidelines,
+                tagline
+            )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response({"creative_direction": creative_direction_from_chatgpt})
+        return Response({"creative_direction_data": creative_direction_from_chatgpt})
+    
+class EVPDefinitionAPIView(APIView):
+    def post(self, request):
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # if EVPDefinition.objects.filter(company=company).exists():
+        #     evp_audit = EVPAudit.objects.filter(company=company)
+        #     serializer = EVPAuditSerializer(evp_audit, many=True)
+        #     return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        try:
+            analysis_instance = SwotAnalysis.objects.get(company=company)
+            serializer = SwotAnalysisSerializer(analysis_instance)
+            analysis_data = serializer.data
+        except SwotAnalysis.DoesNotExist:
+            return Response({"error": "SWOT analysis not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            alignment_instance = Alignment.objects.get(company=company)
+            serializer = AlignmentSerializer(alignment_instance)
+            alignment_data = serializer.data
+        except Alignment.DoesNotExist:
+            return Response({"error": "Alignment data not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
+
+        messaging_hierarchy_tabs_data = MessagingHierarchyTabs.objects.filter(company=company)
+        serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs_data, many=True)
+        themes_data = serializer.data
+
+        themes_data_list = [theme["tab_name"] for theme in themes_data]
+        four_themes = ", ".join(themes_data_list)
+
+        try:
+            evp_definition_from_chatgpt = get_evp_definition_from_chatgpt(company_name, analysis_data, alignment_data, four_themes)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(evp_definition_from_chatgpt)
+
     
 class EVPPromiseAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1053,16 +1151,28 @@ class EVPPromiseAPIView(APIView):
             serializer = EVPPromiseSerializer(evp_promise, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        messaging_hierarchy_tabs_data = MessagingHierarchyTabs.objects.filter(user=user, company=company)
-        serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs_data, many=True)
-        themes_data = serializer.data
+        # messaging_hierarchy_tabs_data = MessagingHierarchyTabs.objects.filter(user=user, company=company)
+        # serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs_data, many=True)
+        # themes_data = serializer.data
 
-        try:
-            evp_promise_from_chatgpt = get_evp_promise_from_chatgpt(company_name, user, themes_data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company)
+        all_themes = []
+        if messaging_hierarchy_data.main_theme is not None and len(messaging_hierarchy_data.main_theme):
+            all_themes.append(messaging_hierarchy_data.main_theme)
+        if messaging_hierarchy_data.pillar_1 is not None and len(messaging_hierarchy_data.pillar_1):
+            all_themes.append(messaging_hierarchy_data.pillar_1)
+        if messaging_hierarchy_data.pillar_2 is not None and len(messaging_hierarchy_data.pillar_2):
+            all_themes.append(messaging_hierarchy_data.pillar_2)
+        if messaging_hierarchy_data.pillar_3 is not None and len(messaging_hierarchy_data.pillar_3):
+            all_themes.append(messaging_hierarchy_data.pillar_3)
+        return Response(all_themes)
 
-        return Response(evp_promise_from_chatgpt)
+        # try:
+        #     evp_promise_from_chatgpt = get_evp_promise_from_chatgpt(company_name, user, themes_data)
+        # except Exception as e:
+        #     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # return Response(evp_promise_from_chatgpt)
     
 class EVPAuditAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1159,16 +1269,278 @@ class EVPEmbedmentAPIView(APIView):
 
         evp_audit_data = " ".join(evp_audit_data_list)
         
-        evp_embedment_data_from_chatgpt = get_evp_embedment_data_from_chatgpt(company_name,
-                                                                              user,
-                                                                              all_touchPoints,
-                                                                              top_4_themes_data,
-                                                                              tagline_data,
-                                                                              evp_promise_data,
-                                                                              evp_audit_data
-                                                                            )
+        evp_embedment_data_from_chatgpt = get_evp_embedment_data_from_chatgpt(
+            company_name,
+            user,
+            all_touchPoints,
+            top_4_themes_data,
+            tagline_data,
+            evp_promise_data,
+            evp_audit_data
+        )
 
         return Response(evp_embedment_data_from_chatgpt)
+    
+class EVPNarrativeAPIView(APIView):
+    def get(self, request):
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        attribute_of_great_place = AttributesOfGreatPlace.objects.get(company=company)
+        serializer = AttributesOfGreatPlaceSerializer(attribute_of_great_place)
+        attribute_of_great_place_data = serializer.data
+
+        key_themes = KeyThemes.objects.get(company=company)
+        serializer = KeyThemesSerializer(key_themes)
+        key_themes_data = serializer.data
+
+        audience_wise_messaging = AudienceWiseMessaging.objects.get(company=company)
+        serializer = AudienceWiseMessagingSerializer(audience_wise_messaging)
+        audience_wise_messaging_data = serializer.data
+        print("hello 1")
+
+        prompt1 = f"""
+                First analyze the Attribute Data :
+
+                Attribute Data : {attribute_of_great_place_data}
+
+                Now analyze the Key Themes Data :
+
+                Key Themes Data : {key_themes_data}
+
+                Now analyze the Audience Wise Messaging Data :
+
+                Audience Wise Messaging Data : {audience_wise_messaging_data}
+
+                Now create a summary of whole above data within 300 words
+             """
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are an expert summary creator from the given data.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt1
+            }
+        ],
+        temperature=0.3,
+        max_tokens=4000,
+        )
+        chat_response = completion.choices[0].message.content
+        data_1 = chat_response
+
+        analysis = SwotAnalysis.objects.get(company=company)
+        serializer = SwotAnalysisSerializer(analysis)
+        analysis_data = serializer.data
+
+        alignment = Alignment.objects.get(company=company)
+        serializer = AlignmentSerializer(alignment)
+        alignment_data = serializer.data
+        print("hello 2")
+
+        prompt2 = f"""
+                First analyze the Analysis Data :
+
+                Analysis Data : {analysis_data}
+
+                Now analyze the Alignment Data :
+
+                Alignment Data : {alignment_data}
+
+                Now create a summary of whole above data within 300 words
+             """
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are an expert summary creator from the given data.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt2
+            }
+        ],
+        temperature=0.3,
+        max_tokens=4000,
+        )
+        chat_response = completion.choices[0].message.content
+        data_2 = chat_response
+
+        top_4_themes = MessagingHierarchyTabs.objects.filter(company=company)
+        serializer = MessagingHierarchyTabsSerializer(top_4_themes, many=True)
+        top_4_themes_data = serializer.data
+
+        messaging_hierarchy = MessagingHierarchyData.objects.get(company=company)
+        serializer = MessagingHierarchyDataSerializer(messaging_hierarchy)
+        messaging_hierarchy_data = serializer.data
+
+        evp_promise = EVPPromise.objects.filter(company=company)
+        serializer = EVPPromiseSerializer(evp_promise, many=True)
+        evp_promise_data = serializer.data
+        print("hello 3")
+
+        prompt3 = f"""
+                First analyze the Top 4 Themes Data :
+
+                Top 4 Themes Data : {top_4_themes_data}
+
+                Now analyze the Messaging Hierarchy Data :
+
+                Messaging Hierarchy Data : {messaging_hierarchy_data}
+
+                Now analyze the EVP Promise Data :
+
+                EVP Promise Data : {evp_promise_data}
+
+                Now create a summary of whole above data within 300 words
+             """
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are an expert summary creator from the given data.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt3
+            }
+        ],
+        temperature=0.3,
+        max_tokens=4000,
+        )
+        chat_response = completion.choices[0].message.content
+        data_3 = chat_response
+        print("hello 4")
+
+        prompt4 = f"""
+                First analyze the Dataset 1 :
+
+                Dataset 1 : {data_1}
+
+                Now analyze the Dataset 2 :
+
+                Dataset 2 : {data_2}
+
+                Now analyze the Dataset 3 :
+
+                Dataset 3 : {data_3}
+
+                After analyzing all the above datasets, create a summary.
+             """
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are an expert summary creator from the given data.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt4
+            }
+        ],
+        temperature=0.3,
+        max_tokens=4000,
+        )
+        chat_response = completion.choices[0].message.content
+        final_data = chat_response
+
+        return Response(final_data)
+    
+class EVPHandBookAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_handbook = EVPHandbook.objects.get(user=user, company=company)
+        except EVPHandbook.DoesNotExist:
+            evp_handbook = None
+
+        if evp_handbook:
+            serializer = EVPHandbookSerializer(evp_handbook)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        handbook_data = request.data.get("handbook_data")
+        if handbook_data:
+            evp_handbook, created = EVPHandbook.objects.get_or_create(
+                company = company,
+                user = user,
+                defaults = {"handbook_data": handbook_data}
+            )
+            if not created:
+                evp_handbook.handbook_data = handbook_data
+                evp_handbook.save()
+            serializer = EVPHandbookSerializer(evp_handbook)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        top_4_themes = MessagingHierarchyTabs.objects.filter(user=user, company=company)
+        serializer = MessagingHierarchyTabsSerializer(top_4_themes, many=True)
+        top_4_themes_data = serializer.data
+
+        messaging_hierarchy = MessagingHierarchyData.objects.get(user=user, company=company)
+        serializer = MessagingHierarchyDataSerializer(messaging_hierarchy)
+        messaging_hierarchy_data = serializer.data
+
+        evp_promise = EVPPromise.objects.filter(user=user, company=company)
+        serializer = EVPPromiseSerializer(evp_promise, many=True)
+        evp_promise_data = serializer.data
+
+        evp_audit = EVPAudit.objects.filter(user=user, company=company)
+        serializer = EVPAuditSerializer(evp_audit, many=True)
+        evp_audit_data = serializer.data
+
+        evp_handbook_data_from_chatgpt = get_evp_handbook_data_from_chatgpt(
+            company_name,
+            user,
+            top_4_themes_data,
+            messaging_hierarchy_data,
+            evp_promise_data,
+            evp_audit_data,
+        )
+
+        return Response({"handbook_data": evp_handbook_data_from_chatgpt}, status=status.HTTP_200_OK)
+
+class EVPStatementAndPillarsSpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, company_name):
+        user = request.user
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_statement = EVPStatementAndPillars.objects.get(user=user, company=company)
+        except EVPStatementAndPillars.DoesNotExist:
+            return Response({"error": "EVPStatementAndPillars does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = EVPStatementAndPillarsSerializer(evp_statement)
+        return Response(serializer.data)
+
     
 class EVPExecutionPlanSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
