@@ -4,12 +4,12 @@ from .models import *
 
 class NewUserAdmin(UserAdmin):
     model = NewUser
-    list_display = ['email', 'is_staff', 'is_active', 'created_at', 'updated_at']
+    list_display = ['email', "role", 'is_staff', 'is_active', 'created_at', 'updated_at']
     ordering = ['email']
     search_fields = ('email',)
     
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
+        (None, {'fields': ('email', 'role', 'password')}),
         ('Personal info', {'fields': ()}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
         ('Important dates', {'fields': ('last_login', 'created_at', 'updated_at')}),
@@ -18,7 +18,7 @@ class NewUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'is_active', 'is_staff', 'is_superuser'),
+            'fields': ('email', 'role', 'password1', 'password2', 'is_active', 'is_staff', 'is_superuser'),
         }),
     )
 
@@ -57,6 +57,9 @@ class CompanyAdmin(admin.ModelAdmin):
                     'brand_guidelines',
                 ]
     list_filter = ['industry']
+
+class TalentDatasetAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "area", "role", "location", "seniority", "key_motivators"]
 
 class PerceptionAdmin(admin.ModelAdmin):
     list_display = ["id", "user", 'company', 'exit_interview_feedback_summary', 'employee_feedback_summary', 'engagement_survey_result_summary', 'glassdoor_score', 'online_forums_summary']
@@ -115,7 +118,7 @@ class CreativeDirectionAdmin(admin.ModelAdmin):
     list_filter = ["company"]
 
 class EVPDefinitionAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "company", "theme", "description", "what_it_means", "what_it_does_not_mean"]
+    list_display = ["id", "user", "company", "theme", "what_it_means", "what_it_does_not_mean"]
     list_filter = ["company"]
 
 class EVPPromiseAdmin(admin.ModelAdmin):
@@ -148,6 +151,7 @@ class EVPStatementAndPillarsAdmin(admin.ModelAdmin):
 
 admin.site.register(NewUser, NewUserAdmin)
 admin.site.register(Company, CompanyAdmin)
+admin.site.register(TalentDataset, TalentDatasetAdmin)
 admin.site.register(Perception, PerceptionAdmin)
 admin.site.register(Loyalty, LoyaltyAdmin)
 admin.site.register(Advocacy, AdvocacyAdmin)

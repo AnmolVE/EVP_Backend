@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ..models import (
     Company,
+    TalentDataset,
     AttributesOfGreatPlace,
     KeyThemes,
     AudienceWiseMessaging,
@@ -23,6 +24,7 @@ from ..models import (
 )
 
 from ..serializers import (
+    TalentDatasetSerializer,
     AttributesOfGreatPlaceSerializer,
     KeyThemesSerializer,
     AudienceWiseMessagingSerializer,
@@ -59,6 +61,36 @@ chat_client = AzureOpenAI(
     api_key=AZURE_OPENAI_KEY,  
     api_version=AZURE_OPENAI_API_VERSION
 )
+
+def save_documents_to_master_vector_database():
+    loader = PyPDFLoader(r"media\admin_merged_pdf\merged_pdf.pdf")
+    document_data = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
+    text_chunks = text_splitter.split_documents(document_data)
+    documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
+
+    embeddings = create_embeddings()
+
+    client = chromadb.PersistentClient(path="vector_databases/MasterVectorDatabase")
+
+    collection = client.get_or_create_collection(
+        name="master_database",
+        embedding_function=embeddings,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+    current_count = collection.count()
+    ids = [f"id{current_count + i}" for i in range(len(documents))]
+    embedded_documents = embeddings([documents[i] for i in range(len(documents))])
+
+    collection.add(
+        embeddings=embedded_documents,
+        documents=documents,
+        ids=ids,
+    )
+
+    return "Documents stored successfully!!!"
 
 langchain_query = {
 "Headquarters": """
@@ -179,7 +211,6 @@ def query_with_langchain(company_name):
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
     text_chunks = text_splitter.split_documents(document_data)
-    print("Hello")
     documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
     ids=[f"id{i}" for i in range(len(documents))]
 
@@ -287,6 +318,105 @@ def save_pgData_to_vector_database(file_path, company_name):
 
         return "Data added successfully in the vector database"
     return "Some error occured"
+
+def get_talent_dataset_from_chatgpt(company_name, user):
+    company = Company.objects.get(user=user, name=company_name)
+    embeddings = create_embeddings()
+
+    sanitized_company_name = re.sub(r'\s+', '_', company_name)
+    client = chromadb.PersistentClient(path=f"vector_databases/{sanitized_company_name}")
+
+    collection = client.get_or_create_collection(
+        name="test",
+        embedding_function=embeddings,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+    query = """
+            Look for documents with titles like Job Description or Job Openings as well as the company's careers website and any presence on job websites including indeed.com, seek.com, LinkedIn jobs.
+    """
+    query_results = collection.query(
+                query_texts=[query],
+                n_results=40,
+            )
+    fetched_documents = " ".join(query_results["documents"][0])
+
+    RESPONSE_JSON = {
+        "talent_dataset": [
+            {
+                "id": "1",
+                "area": "value",
+                "role": "value",
+                "location": "value",
+                "seniority": "value"
+            },
+            {
+                "id": "2",
+                "area": "value",
+                "role": "value",
+                "location": "value",
+                "seniority": "value"
+            }
+        ]
+    }
+
+    prompt = f"""First analyze the given Dataset given below and return the response in json format.
+
+        Dataset: {fetched_documents}.
+
+        Now from the given Dataset, fetch the complete information about :
+
+        - Search for the type of area that is being advertised. Examples: Technology, HR, Admin, Legal, Sales etc.
+        - Search for the designation/role or the position  that is being advertised. Examples: Software Developer, Sales Manager, etc.
+        - Search for the location where the role is based. Examples: India, Manila - Philippines, Europe, North America, etc.
+        - Search for the seniority or level of the role. Examples: Entry, Mid, Senior, Executive, Director etc.
+
+        I have added examples just for your reference don't take the examples for granted and fetch the actual information in the given data.
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Replace the value with the actual information.
+
+        **Important : ** Area, Location and Seniority can be repeated but role cannot repeat.
+        """
+    
+    completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are a helpful expert research assistant.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0.3,
+        max_tokens=2000,
+        )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+    talent_dataset = json_response["talent_dataset"]
+
+    for dataset in talent_dataset:
+        TalentDataset.objects.create(
+            user=user,
+            company=company,
+            area=dataset["area"],
+            role=dataset["role"],
+            location=dataset["location"],
+            seniority=dataset["seniority"],
+            key_motivators = "",
+        )
+    talent_datasets = TalentDataset.objects.filter(user=user, company=company)
+    serializer = TalentDatasetSerializer(talent_datasets, many=True)
+    return serializer.data
 
 attributes_of_great_place_query = {
 "Culture":"""
@@ -528,6 +658,72 @@ def get_develop_data_from_vector_database(company_name, user):
         offer_drops = json_data.get("Offer Drops", ""),
     )
 
+def get_talent_insights_from_chatgpt(company_name, all_talent_dataset):
+    company = Company.objects.get(name=company_name)
+    embeddings = create_embeddings()
+
+    client = chromadb.PersistentClient(path="vector_databases/MasterVectorDatabase")
+
+    collection = client.get_collection(
+        name="master_database",
+        embedding_function=embeddings,
+    )
+
+    query = """
+            Identify the key motivators and drivers for individuals.
+            What inspires them to stay in their roles and perform well?
+            Look for phrases including and similar to "career drivers" "career motivators" "job motivators" "Professional Aspirations" "Professional Drivers".
+    """
+    query_results = collection.query(
+                query_texts=[query],
+                n_results=40,
+            )
+    fetched_documents = " ".join(query_results["documents"][0])
+    print(len(fetched_documents))
+
+    RESPONSE_JSON = {
+        "talent_insights": all_talent_dataset
+    }
+
+    prompt = f"""First analyze the given Dataset given below and return the response in json format.
+
+        Dataset: {fetched_documents}.
+
+        After analyzing the complete Dataset,
+        Search for phrases including and similar to "career drivers" "career motivators" "job motivators" "Professional Aspirations" "Professional Drivers" corresponding to the job title.
+        After searching, create a short paragraph to summarize it 100 words.
+
+        Your task is to fill the actual data as the value of key_motivators in each object using the given dataset.
+
+        Make sure to format the response in json exactly like {RESPONSE_JSON} and use it as a guide.
+        Fill the vale of key_motivators with the actual information.
+        """
+    
+    completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are a helpful expert research assistant.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0.3,
+        max_tokens=4000,
+        )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+    talent_insights = json_response["talent_insights"]
+    return talent_insights
 
 swot_analysis_query = {
 "what_is_working_well_for_the_organization": """Identify the attributes that highlight what is working well for the organization. Focus on aspects that employees and external reviewers consistently praise or express satisfaction with. Provide detailed insights on these positive aspects and how they contribute to the overall success and positive reputation of the organization.
@@ -861,6 +1057,80 @@ def get_creative_direction_from_chatgpt(brand_guidelines, tagline):
     chat_response = completion.choices[0].message.content
     return chat_response
 
+def get_evp_definition_from_chatgpt(company_name, user, analysis_data, alignment_data, all_themes):
+    company = Company.objects.get(name=company_name)
+    company_id = company.id
+
+    RESPONSE_JSON = {
+        "Theme": {
+            "What it means": "Provide a simplified explanation of what the description means in an office or employee context.",
+            "What it does not mean": "Consider literal meanings of the pillar / description and list things that don't seem reasonable in an office or employee context."
+        }
+    }
+
+    prompt = f"""
+                First analyze the given datasets below and return the data in json format:
+                Analyze the Analysis Data.
+
+                Analysis Data : {analysis_data}
+
+                Now analyze the Alignment Data.
+
+                Alignment Data : {alignment_data}
+
+                All Themes Available: {all_themes}
+
+                For each of the available themes, provide a detailed messaging overview that includes response for the below query:
+
+                RESPONSE_JSON : {RESPONSE_JSON}
+
+                The json format will contain keys same as the RESPONSE_JSON and value as the response to the query and replace Theme with the actual theme name.
+                Don't include list in the response and don't include numbers or anything, I just want keys and the description.
+
+                Make sure to format your response like RESPONSE_JSON and use it as a guide.
+             """
+    
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are an expert advertising creative art director.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+
+    for key,value in json_response.items():
+        theme = key
+        what_it_means = value["What it means"]
+        what_it_does_not_mean = value["What it does not mean"]
+
+        EVPDefinition.objects.create(
+            user=user,
+            company = company,
+            theme = theme,
+            what_it_means = what_it_means,
+            what_it_does_not_mean = what_it_does_not_mean,
+        )
+
+    evp_definition = EVPDefinition.objects.filter(user=user, company=company_id)
+    serializer = EVPDefinitionSerializer(evp_definition, many=True)
+    return serializer.data
+
 def get_evp_promise_from_chatgpt(company_name, user, themes_data):
     company = Company.objects.get(user=user, name=company_name)
     company_id = company.id
@@ -1004,82 +1274,6 @@ def get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data
     evp_audit = EVPAudit.objects.filter(user=user, company=company_id)
     serializer = EVPAuditSerializer(evp_audit, many=True)
     return serializer.data
-
-def get_evp_definition_from_chatgpt(company_name,analysis_data, alignment_data, four_themes):
-    company = Company.objects.get(name=company_name)
-    company_id = company.id
-
-    RESPONSE_JSON = {
-        "Theme": {
-            "Description": "Evaluate  what aspects of this theme are believable about the company. Look for elements that are true today and being experienced by employees. ",
-            "What it means": "Evaluate  what aspects of this theme are not yet fully believable and can be considered 'aspirational' by the company. Look for elements that are not necessarily 100% true today or being fully experienced by employees but are elements that the company would like to aspire towards.",
-            "What it does not mean": ""
-        }
-    }
-
-    prompt = f"""
-                First analyze the given datasets below and return the data in json format:
-                Analyze the Analysis Data.
-
-                Analysis Data : {analysis_data}
-
-                Now analyze the Alignment Data.
-
-                Alignment Data : {alignment_data}
-
-                Four Themes Available: {four_themes}
-
-                For each of the four themes, provide a detailed messaging overview that includes response for the below query:
-
-                RESPONSE_JSON : {RESPONSE_JSON}
-
-                The json format will contain keys same as the RESPONSE_JSON and value as the response to the query and replace Theme with the actual theme name.
-                Don't include list in the response and don't include numbers or anything, I just want keys and the description.
-
-                Make sure to format your response like RESPONSE_JSON and use it as a guide.
-             """
-    
-    completion = chat_client.chat.completions.create(
-    model=AZURE_OPENAI_DEPLOYMENT,
-    response_format={ "type": "json_object" },
-    messages = [
-        {
-            "role":"system",
-            "content":"""You are an expert advertising creative art director.
-                        """
-        },
-        {
-            "role":"user",
-            "content":prompt
-        }
-    ],
-    temperature=0.3,
-    max_tokens=4000,
-    )
-    chat_response = completion.choices[0].message.content
-    try:
-        json_response = json.loads(chat_response)
-    except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON response: {e}")
-        json_response = {}
-    return json_response
-
-    # for key,value in json_response.items():
-    #     theme = key
-    #     what_makes_this_credible = value["What makes this credible"]
-    #     where_do_we_need_to_stretch = value["Where do we need to stretch"]
-
-    #     EVPDefinition.objects.create(
-    #         user=user,
-    #         company = company,
-    #         theme = theme,
-    #         what_makes_this_credible = what_makes_this_credible,
-    #         where_do_we_need_to_stretch = where_do_we_need_to_stretch,
-    #     )
-
-    # evp_audit = EVPDefinition.objects.filter(user=user, company=company_id)
-    # serializer = EVPDefinitionSerializer(evp_audit, many=True)
-    # return serializer.data
 
 all_touchpoint_prompts = {
 "Careers Website": """Create content for the Careers section of our website that highlights our company culture, benefits, and career growth opportunities. Include testimonials from current employees and visuals of our work environment.

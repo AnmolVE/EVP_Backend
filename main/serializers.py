@@ -34,6 +34,11 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = '__all__'
 
+class TalentDatasetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TalentDataset
+        fields = "__all__"
+
 class PerceptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Perception
@@ -88,6 +93,11 @@ class AudienceWiseMessagingSerializer(serializers.ModelSerializer):
     class Meta:
         model = AudienceWiseMessaging
         fields = "__all__"
+
+class TalentInsightsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TalentDataset
+        fields = ["id", "area", "role", "location", "seniority", "key_motivators"]
 
 class SwotAnalysisSerializer(serializers.ModelSerializer):
     class Meta:

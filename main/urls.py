@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path("login/", LoginAPIView.as_view(), name="login"),
+    path("master-vector-database/", MasterVectorDatabaseAPIView.as_view(), name="master-vector-database"),
     path("search/", SearchWebsiteView.as_view(), name="search"),
     path("chatbot/", ChatBotAPIView.as_view(), name="search"),
     path("develop/", DevelopAPIView.as_view(), name="develop"),
@@ -13,6 +14,7 @@ urlpatterns = [
     path("send-mail/", SendMailAPIView.as_view(), name="send-mail"),
     path("transcript/<str:company_name>/", TranscriptAPIView.as_view(), name="transcript"),
     path("design-principles/<str:company_name>/", DesignPrinciplesAPIView.as_view(), name="design-principles"),
+    path("talent-dataset/", TalentDatasetAPIView.as_view(), name="talent-dataset"),
     path("companies/<str:company_name>/", CompanySpecificAPIView.as_view(), name='company-specific'),
     path("perception/<str:company_name>/", PerceptionSpecificAPIView.as_view(), name='perception-specific'),
     path("loyalty/<str:company_name>/", LoyaltySpecificAPIView.as_view(), name='loyalty-specific'),
@@ -23,6 +25,7 @@ urlpatterns = [
     path("attributes-of-great-workplace/<str:company_name>/", AttributesOfGreatPlaceSpecificAPIView.as_view(), name='attributes-of-great-workplace-specific'),
     path("key-themes/<str:company_name>/", KeyThemesSpecificAPIView.as_view(), name='key-themes-specific'),
     path("audience-wise-messaging/<str:company_name>/", AudienceWiseMessagingSpecificAPIView.as_view(), name='audience-wise-messaging-specific'),
+    path("talent-insights/", TalentInsightsAPIView.as_view(), name="talent-insights"),
     path("swot-analysis/<str:company_name>/", SwotAnalysisSpecificAPIView.as_view(), name='swot-analysis-specific'),
     path("alignment/<str:company_name>/", AlignmentSpecificAPIView.as_view(), name='alignment-specific'),
     path("messaging-hierarchy/<str:company_name>/", MessagingHierarchySpecificAPIView.as_view(), name='messaging-hierarchy'),

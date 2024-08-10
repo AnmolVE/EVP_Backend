@@ -9,6 +9,7 @@ from django.contrib.auth import login
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import permissions
 from rest_framework.permissions import IsAuthenticated
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -41,11 +42,14 @@ from .utils.bing_search import bing_query_data, get_data_from_bing, save_data_to
 from .utils.chatgpt import chatgpt_1_query_data, get_data_from_chatgpt_1
 from .utils.handle_documents import save_documents, merge_documents
 from .utils.langchaining import (
+    save_documents_to_master_vector_database,
+    get_talent_dataset_from_chatgpt,
     testing_data,
     create_embeddings,
     query_with_langchain,
     save_pgData_to_vector_database,
     get_develop_data_from_vector_database,
+    get_talent_insights_from_chatgpt,
     get_dissect_data_from_vector_database,
     get_design_data_from_database, get_tagline,
     get_creative_direction_from_chatgpt,
@@ -80,6 +84,7 @@ def get_tokens_for_user(user):
         "refresh": str(refresh),
         "access": str(refresh.access_token),
         "email": str(user.email),
+        "role": str(user.role),
     }
 
 class LoginAPIView(APIView):
@@ -90,8 +95,13 @@ class LoginAPIView(APIView):
             user = serializer.validated_data['user']
             login(request, user)
             tokens = get_tokens_for_user(user)
-            return Response({"tokens": tokens, "email": user.email}, status=status.HTTP_200_OK)
+            return Response({"tokens": tokens}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class IsAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return user.role == "Admin"
 
 
 class Testing(APIView):
@@ -153,6 +163,39 @@ class Testing(APIView):
 
         print(get_data)
         return Response(get_data)
+    
+# *****************************Admin Space**********************************
+class MasterVectorDatabaseAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request):
+        user = request.user
+
+        if "documents" in request.FILES:
+            if os.path.exists(r"media\admin_documents"):
+                for filename in os.listdir(r"media\admin_documents"):
+                    file_path = os.path.join(r"media\admin_documents", filename)
+                    try:
+                        if os.path.isfile(file_path) or os.path.islink(file_path):
+                            os.unlink(file_path)
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)
+                    except Exception as e:
+                        print(f'Failed to delete {file_path}. Reason: {e}')
+            uploaded_documents = request.FILES.getlist("documents")
+            all_documents = []
+            for document in uploaded_documents:
+                response = save_documents(document, "admin_documents")
+                all_documents.append(response)
+            merge_documents("media/admin_documents", "admin_merged_pdf", "merged_pdf.pdf")
+        else:
+            uploaded_documents = None
+
+        if uploaded_documents:
+            master_database_response = save_documents_to_master_vector_database()
+            return Response(master_database_response, status=status.HTTP_200_OK)
+        
+        return Response({"error": "Please upload at least one document"}, status=status.HTTP_400_BAD_REQUEST)
     
 class SearchWebsiteView(APIView):
     permission_classes = [IsAuthenticated]
@@ -451,9 +494,7 @@ class TranscriptAPIView(APIView):
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=20)
             text_chunks = text_splitter.split_documents(document_data)
             documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
-            ids=[f"id{i}" for i in range(len(documents))]
             embeddings = create_embeddings()
-            embedded_documents = embeddings([documents[i] for i in range(len(documents))])
         else:
             text_chunks = []
  
@@ -463,12 +504,16 @@ class TranscriptAPIView(APIView):
         chroma_client = chromadb.PersistentClient(path=persistent_directory)
         if os.path.exists(os.path.join(persistent_directory)):
             if text_chunks:
-                chatbot_collection = chroma_client.get_or_create_collection(
+                collection = chroma_client.get_or_create_collection(
                     name="test",
                     embedding_function=embeddings,
                 )
 
-                chatbot_collection.add(
+                current_count = collection.count()
+                ids = [f"id{current_count + i}" for i in range(len(documents))]
+                embedded_documents = embeddings([documents[i] for i in range(len(documents))])
+
+                collection.add(
                     embeddings=embedded_documents,
                     documents=documents,
                     ids=ids,
@@ -554,6 +599,25 @@ class CompanySpecificAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class TalentDatasetAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if TalentDataset.objects.filter(user=user, company=company).exists():
+            talent_datasets = TalentDataset.objects.filter(user=user, company=company)
+            serializer = TalentDatasetSerializer(talent_datasets, many=True)
+            return Response(serializer.data)
+        
+        talent_dataset_from_chatgpt = get_talent_dataset_from_chatgpt(company_name, user)
+        return Response(talent_dataset_from_chatgpt, status=status.HTTP_200_OK)
     
 class PerceptionSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -896,6 +960,26 @@ class AudienceWiseMessagingSpecificAPIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class TalentInsightsAPIView(APIView):
+    def post(self, request):
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(name=company_name)
+        except Company.DoesNotExist:
+            return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        talent_dataset = TalentDataset.objects.filter(company=company)
+
+        if not talent_dataset.exists():
+            return Response({"error": "Talent Dataset does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TalentInsightsSerializer(talent_dataset, many=True)
+        all_talent_dataset = serializer.data
+
+        talent_insights_from_chatgpt = get_talent_insights_from_chatgpt(company_name, all_talent_dataset)
+
+        return Response(talent_insights_from_chatgpt, status=status.HTTP_200_OK)
 
 class SwotAnalysisSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1094,41 +1178,54 @@ class CreativeDirectionAPIView(APIView):
         return Response({"creative_direction_data": creative_direction_from_chatgpt})
     
 class EVPDefinitionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
+        user = request.user
         company_name = request.data.get("company_name")
         try:
-            company = Company.objects.get(name=company_name)
+            company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        # if EVPDefinition.objects.filter(company=company).exists():
-        #     evp_audit = EVPAudit.objects.filter(company=company)
-        #     serializer = EVPAuditSerializer(evp_audit, many=True)
-        #     return Response(serializer.data, status=status.HTTP_200_OK)
+        if EVPDefinition.objects.filter(company=company).exists():
+            evp_audit = EVPDefinition.objects.filter(company=company)
+            serializer = EVPDefinitionSerializer(evp_audit, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         try:
-            analysis_instance = SwotAnalysis.objects.get(company=company)
+            analysis_instance = SwotAnalysis.objects.get(user=user, company=company)
             serializer = SwotAnalysisSerializer(analysis_instance)
             analysis_data = serializer.data
         except SwotAnalysis.DoesNotExist:
             return Response({"error": "SWOT analysis not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            alignment_instance = Alignment.objects.get(company=company)
+            alignment_instance = Alignment.objects.get(user=user, company=company)
             serializer = AlignmentSerializer(alignment_instance)
             alignment_data = serializer.data
         except Alignment.DoesNotExist:
             return Response({"error": "Alignment data not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            messaging_hierarchy_data_instance = MessagingHierarchyData.objects.get(user=user, company=company)
+        except MessagingHierarchyData.DoesNotExist:
+            return Response({"error": "Messaging Hierarchy Data does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        themes_data_list = []
+        if messaging_hierarchy_data_instance.main_theme is not None and len(messaging_hierarchy_data_instance.main_theme):
+            themes_data_list.append(messaging_hierarchy_data_instance.main_theme)
+        if messaging_hierarchy_data_instance.pillar_1 is not None and len(messaging_hierarchy_data_instance.pillar_1):
+            themes_data_list.append(messaging_hierarchy_data_instance.pillar_1)
+        if messaging_hierarchy_data_instance.pillar_2 is not None and len(messaging_hierarchy_data_instance.pillar_2):
+            themes_data_list.append(messaging_hierarchy_data_instance.pillar_2)
+        if messaging_hierarchy_data_instance.pillar_3 is not None and len(messaging_hierarchy_data_instance.pillar_3):
+            themes_data_list.append(messaging_hierarchy_data_instance.pillar_3)
 
-        messaging_hierarchy_tabs_data = MessagingHierarchyTabs.objects.filter(company=company)
-        serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs_data, many=True)
-        themes_data = serializer.data
-
-        themes_data_list = [theme["tab_name"] for theme in themes_data]
-        four_themes = ", ".join(themes_data_list)
+        all_themes = ", ".join(themes_data_list)
 
         try:
-            evp_definition_from_chatgpt = get_evp_definition_from_chatgpt(company_name, analysis_data, alignment_data, four_themes)
+            evp_definition_from_chatgpt = get_evp_definition_from_chatgpt(company_name, user, analysis_data, alignment_data, all_themes)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

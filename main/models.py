@@ -2,16 +2,25 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
+ROLE_CHOICES = (
+    ('Admin', 'Admin'),
+    ('User', 'User'),
+
+)
+
 class CustomAccountManager(BaseUserManager):
 
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("role", "Admin")
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Staff must be assigned to is_staff=True.")
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must be assigned to is_superuser=True.")
+        if extra_fields.get("role") != "Admin":
+            raise ValueError("Superuser must have role='Admin'.")
         
         return self.create_user(email, password, **extra_fields)
     
@@ -27,6 +36,8 @@ class CustomAccountManager(BaseUserManager):
 
 class NewUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_("email address"), unique=True)
+    role = models.CharField(choices=ROLE_CHOICES, max_length=100,
+                            default="User")
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -74,6 +85,18 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+    
+class TalentDataset(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    area = models.CharField(max_length=500, null=True, blank=True)
+    role = models.CharField(max_length=500, null=True, blank=True)
+    location = models.CharField(max_length=500, null=True, blank=True)
+    seniority = models.CharField(max_length=500, null=True, blank=True)
+    key_motivators = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company.name} - Talent Dataset"
     
 class Perception(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
@@ -244,7 +267,6 @@ class EVPDefinition(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     theme = models.TextField(null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
     what_it_means = models.TextField(null=True, blank=True)
     what_it_does_not_mean = models.TextField(null=True, blank=True)
 
