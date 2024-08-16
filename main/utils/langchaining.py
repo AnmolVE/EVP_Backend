@@ -62,6 +62,27 @@ chat_client = AzureOpenAI(
     api_version=AZURE_OPENAI_API_VERSION
 )
 
+# def create_embeddings():
+#     embeddings = AzureOpenAIEmbeddings(
+#                     openai_api_key = AZURE_OPENAI_KEY,
+#                     azure_endpoint = AZURE_ENDPOINT,
+#                     openai_api_version = AZURE_OPENAI_API_VERSION,
+#                     openai_api_type = AZURE_OPENAI_TYPE,
+#                     azure_deployment = AZURE_EMBEDDING_DEPLOYMENT,
+#                     model = AZURE_EMBEDDING_MODEL
+#                 )
+#     return embeddings
+
+def create_embeddings():
+    embeddings = embedding_functions.OpenAIEmbeddingFunction(
+            api_key=AZURE_OPENAI_KEY,
+            api_base=AZURE_ENDPOINT,
+            api_type=AZURE_OPENAI_TYPE,
+            api_version=AZURE_OPENAI_API_VERSION,
+            model_name=AZURE_EMBEDDING_MODEL,
+        )
+    return embeddings
+
 def save_documents_to_master_vector_database():
     loader = PyPDFLoader(r"media\admin_merged_pdf\merged_pdf.pdf")
     document_data = loader.load()
@@ -183,27 +204,6 @@ langchain_query = {
                 Locate the colors, imagery guidelines, logo guidelines
 """
 }
-
-# def create_embeddings():
-#     embeddings = AzureOpenAIEmbeddings(
-#                     openai_api_key = AZURE_OPENAI_KEY,
-#                     azure_endpoint = AZURE_ENDPOINT,
-#                     openai_api_version = AZURE_OPENAI_API_VERSION,
-#                     openai_api_type = AZURE_OPENAI_TYPE,
-#                     azure_deployment = AZURE_EMBEDDING_DEPLOYMENT,
-#                     model = AZURE_EMBEDDING_MODEL
-#                 )
-#     return embeddings
-
-def create_embeddings():
-    embeddings = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=AZURE_OPENAI_KEY,
-            api_base=AZURE_ENDPOINT,
-            api_type=AZURE_OPENAI_TYPE,
-            api_version=AZURE_OPENAI_API_VERSION,
-            model_name=AZURE_EMBEDDING_MODEL,
-        )
-    return embeddings
 
 def query_with_langchain(company_name):
     loader = PyPDFLoader(r"media\final_pdf\merged_pdf.pdf")
@@ -403,6 +403,7 @@ def get_talent_dataset_from_chatgpt(company_name, user):
         print(f"Failed to parse JSON response: {e}")
         json_response = {}
     talent_dataset = json_response["talent_dataset"]
+    # return talent_dataset
 
     for dataset in talent_dataset:
         TalentDataset.objects.create(
@@ -489,13 +490,7 @@ audience_wise_messaging_query = {
 }
 
 def get_develop_data_from_vector_database(company_name, user):
-    embeddings = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=AZURE_OPENAI_KEY,
-            api_base=AZURE_ENDPOINT,
-            api_type=AZURE_OPENAI_TYPE,
-            api_version=AZURE_OPENAI_API_VERSION,
-            model_name=AZURE_EMBEDDING_MODEL,
-        )
+    embeddings = create_embeddings()
     sanitized_company_name = re.sub(r'\s+', '_', company_name)
     persistent_directory = f"vector_databases/{sanitized_company_name}"
     if os.path.exists(os.path.join(persistent_directory)):
@@ -792,13 +787,7 @@ def get_dissect_data_from_vector_database(company_name, user):
         what_is_not_working_well_for_the_organization = json_data.get("what_is_not_working_well_for_the_organization", ""),
     )
 
-    embeddings = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=AZURE_OPENAI_KEY,
-            api_base=AZURE_ENDPOINT,
-            api_type=AZURE_OPENAI_TYPE,
-            api_version=AZURE_OPENAI_API_VERSION,
-            model_name=AZURE_EMBEDDING_MODEL,
-        )
+    embeddings = create_embeddings()
     
     sanitized_company_name = re.sub(r'\s+', '_', company_name)
     persistent_directory = f"vector_databases/{sanitized_company_name}"
@@ -1131,7 +1120,7 @@ def get_evp_definition_from_chatgpt(company_name, user, analysis_data, alignment
     serializer = EVPDefinitionSerializer(evp_definition, many=True)
     return serializer.data
 
-def get_evp_promise_from_chatgpt(company_name, user, themes_data):
+def get_evp_promise_from_chatgpt(company_name, user, all_themes):
     company = Company.objects.get(user=user, name=company_name)
     company_id = company.id
 
@@ -1146,9 +1135,9 @@ def get_evp_promise_from_chatgpt(company_name, user, themes_data):
     prompt = f"""
                 First analyze the given Themes Data below and return the data in json format:
 
-                Themes Data : {themes_data}
+                Themes Data : {all_themes}
 
-                For each of the four themes, provide a detailed messaging overview that includes response for the below query:
+                For each of the given themes, provide a detailed messaging overview that includes response for the below query:
 
                 RESPONSE_JSON : {RESPONSE_JSON}
 
@@ -1201,7 +1190,7 @@ def get_evp_promise_from_chatgpt(company_name, user, themes_data):
     serializer = EVPPromiseSerializer(evp_promise, many=True)
     return serializer.data
 
-def get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data, four_themes):
+def get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data, all_themes):
     company = Company.objects.get(user=user, name=company_name)
     company_id = company.id
 
@@ -1222,9 +1211,9 @@ def get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data
 
                 Alignment Data : {alignment_data}
 
-                Four Themes Available: {four_themes}
+                Themes Available: {all_themes}
 
-                For each of the four themes, provide a detailed messaging overview that includes response for the below query:
+                For each of the available themes, provide a detailed messaging overview that includes response for the below query:
 
                 RESPONSE_JSON : {RESPONSE_JSON}
 

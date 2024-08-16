@@ -1155,16 +1155,11 @@ class CreativeDirectionAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         try:
-            brand = Brand.objects.get(user=user, company=company)
-        except Brand.DoesNotExist:
-            return Response({"error": "Brand not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
-        
-        try:
             messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company)
         except MessagingHierarchyData.DoesNotExist:
             return Response({"error": "Messaging hierarchy data not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
         
-        brand_guidelines = brand.brand_guidelines
+        brand_guidelines = company.brand_guidelines
         tagline = messaging_hierarchy_data.tagline
 
         try:
@@ -1213,13 +1208,13 @@ class EVPDefinitionAPIView(APIView):
             return Response({"error": "Messaging Hierarchy Data does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
         themes_data_list = []
-        if messaging_hierarchy_data_instance.main_theme is not None and len(messaging_hierarchy_data_instance.main_theme):
+        if messaging_hierarchy_data_instance.main_theme is not None and len(messaging_hierarchy_data_instance.main_theme) > 0:
             themes_data_list.append(messaging_hierarchy_data_instance.main_theme)
-        if messaging_hierarchy_data_instance.pillar_1 is not None and len(messaging_hierarchy_data_instance.pillar_1):
+        if messaging_hierarchy_data_instance.pillar_1 is not None and len(messaging_hierarchy_data_instance.pillar_1) > 0:
             themes_data_list.append(messaging_hierarchy_data_instance.pillar_1)
-        if messaging_hierarchy_data_instance.pillar_2 is not None and len(messaging_hierarchy_data_instance.pillar_2):
+        if messaging_hierarchy_data_instance.pillar_2 is not None and len(messaging_hierarchy_data_instance.pillar_2) > 0:
             themes_data_list.append(messaging_hierarchy_data_instance.pillar_2)
-        if messaging_hierarchy_data_instance.pillar_3 is not None and len(messaging_hierarchy_data_instance.pillar_3):
+        if messaging_hierarchy_data_instance.pillar_3 is not None and len(messaging_hierarchy_data_instance.pillar_3) > 0:
             themes_data_list.append(messaging_hierarchy_data_instance.pillar_3)
 
         all_themes = ", ".join(themes_data_list)
@@ -1248,10 +1243,6 @@ class EVPPromiseAPIView(APIView):
             serializer = EVPPromiseSerializer(evp_promise, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # messaging_hierarchy_tabs_data = MessagingHierarchyTabs.objects.filter(user=user, company=company)
-        # serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs_data, many=True)
-        # themes_data = serializer.data
-
         messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company)
         all_themes = []
         if messaging_hierarchy_data.main_theme is not None and len(messaging_hierarchy_data.main_theme):
@@ -1262,14 +1253,13 @@ class EVPPromiseAPIView(APIView):
             all_themes.append(messaging_hierarchy_data.pillar_2)
         if messaging_hierarchy_data.pillar_3 is not None and len(messaging_hierarchy_data.pillar_3):
             all_themes.append(messaging_hierarchy_data.pillar_3)
-        return Response(all_themes)
 
-        # try:
-        #     evp_promise_from_chatgpt = get_evp_promise_from_chatgpt(company_name, user, themes_data)
-        # except Exception as e:
-        #     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        try:
+            evp_promise_from_chatgpt = get_evp_promise_from_chatgpt(company_name, user, all_themes)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # return Response(evp_promise_from_chatgpt)
+        return Response(evp_promise_from_chatgpt)
     
 class EVPAuditAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1301,15 +1291,19 @@ class EVPAuditAPIView(APIView):
         except Alignment.DoesNotExist:
             return Response({"error": "Alignment data not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
 
-        messaging_hierarchy_tabs_data = MessagingHierarchyTabs.objects.filter(user=user, company=company)
-        serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs_data, many=True)
-        themes_data = serializer.data
-
-        themes_data_list = [theme["tab_name"] for theme in themes_data]
-        four_themes = ", ".join(themes_data_list)
+        messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company)
+        all_themes = []
+        if messaging_hierarchy_data.main_theme is not None and len(messaging_hierarchy_data.main_theme):
+            all_themes.append(messaging_hierarchy_data.main_theme)
+        if messaging_hierarchy_data.pillar_1 is not None and len(messaging_hierarchy_data.pillar_1):
+            all_themes.append(messaging_hierarchy_data.pillar_1)
+        if messaging_hierarchy_data.pillar_2 is not None and len(messaging_hierarchy_data.pillar_2):
+            all_themes.append(messaging_hierarchy_data.pillar_2)
+        if messaging_hierarchy_data.pillar_3 is not None and len(messaging_hierarchy_data.pillar_3):
+            all_themes.append(messaging_hierarchy_data.pillar_3)
 
         try:
-            evp_audit_from_chatgpt = get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data, four_themes)
+            evp_audit_from_chatgpt = get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data, all_themes)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
