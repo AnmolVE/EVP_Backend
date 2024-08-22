@@ -122,7 +122,7 @@ class EVPDefinitionAdmin(admin.ModelAdmin):
     list_filter = ["company"]
 
 class EVPPromiseAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "company", "theme", "what_makes_this_theme_distinctive", "what_employees_can_expect", "what_is_expected_of_employees"]
+    list_display = ["id", "user", "company", "theme", "what_employees_can_expect", "what_is_expected_of_employees"]
     list_filter = ["company"]
 
 class EVPAuditAdmin(admin.ModelAdmin):

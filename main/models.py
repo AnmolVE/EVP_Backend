@@ -277,7 +277,6 @@ class EVPPromise(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     theme = models.TextField(null=True, blank=True)
-    what_makes_this_theme_distinctive = models.TextField(null=True, blank=True)
     what_employees_can_expect = models.TextField(null=True, blank=True)
     what_is_expected_of_employees = models.TextField(null=True, blank=True)
 

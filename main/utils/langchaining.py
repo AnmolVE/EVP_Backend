@@ -1126,7 +1126,6 @@ def get_evp_promise_from_chatgpt(company_name, user, all_themes):
 
     RESPONSE_JSON = {
         "Theme": {
-            "What makes this theme distinctive": "A summary of 2 lines explaining what makes this theme stand out.",
             "What employees can expect": "Create 3 points describing what employees can expect in relation to this theme.",
             "What is expected of employees": "Create 3 points outlining what is expected of employees in relation to this theme."
         }
@@ -1173,7 +1172,6 @@ def get_evp_promise_from_chatgpt(company_name, user, all_themes):
 
     for key,value in json_response.items():
         theme = key
-        what_makes_this_theme_distinctive = value["What makes this theme distinctive"]
         what_employees_can_expect = value["What employees can expect"]
         what_is_expected_of_employees = value["What is expected of employees"]
 
@@ -1181,7 +1179,6 @@ def get_evp_promise_from_chatgpt(company_name, user, all_themes):
             user=user,
             company = company,
             theme = theme,
-            what_makes_this_theme_distinctive = what_makes_this_theme_distinctive,
             what_employees_can_expect = what_employees_can_expect,
             what_is_expected_of_employees = what_is_expected_of_employees,
         )
