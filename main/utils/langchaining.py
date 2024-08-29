@@ -120,7 +120,7 @@ langchain_query = {
 """,
 "Established Date": """
         Find the date or year the company was established. Look for phrases like 'founded in,' 'established in,' or 'incorporated on.' Identify the specific year or date of the company's founding.
-        The response should appear in mm/dd/yyyy format
+        The response should only be appear in yyyy format.
 """,
 "About the company": """
         Create a summary which gives the description about the company. Focus on how the company describes itself. Examples include "professional services firm" or "automobile company" or "global consulting company". Include a line on their product or services. Include a line on their clientele. 
@@ -139,9 +139,11 @@ langchain_query = {
 """,
 "Number of Employees": """
                 Search for the total number of employees in the company. Use terms like 'employee count,' 'number of employees,' or 'company workforce.' Provide the latest available employee count.
+                Response should only contain the number of employees. No other words or statements. Numeric response only.
 """,
 "Number of Geographies": """
                 Identify the number of geographical locations where the company has operations. Search for phrases like 'number of locations,' 'geographical presence,' or 'global footprint.' List the distinct regions or countries where the company is active.
+                Response should only list the geographies and not have any additional words.
 """,
 "LinkedIn URL and followers": """
                 Search for information on the company's LinkedIn profile. Use keywords like 'LinkedIn profile,' 'LinkedIn company page,' or 'LinkedIn followers.' Provide the URL, follower count, and a summary of the company's activity on LinkedIn. Include the frequency of posts, the average number of likes per post, and the average number of comments per post.
@@ -161,20 +163,8 @@ langchain_query = {
 "Internal Comms Channels": """
                 Intranet, emails, newsletter, townhalls, collaboration platform like Teams / Slack
 """,
-"Exit Interview Feedback Summary": """
-                Find feedback from exited employees about the company. Use keywords like 'exit feedback,' 'leaving form,' or 'exit interview'. Provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarize the actual feedback. 
-""",
-"Employee Feedback Summary": """
-                Find feedback from current or former employees about the company. Use keywords like 'employee feedback,' 'staff opinions,' or 'employee reviews' or 'HR complaints'.  Provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarise the actual feedback.
-""",
-"Engagement Survey Result Summary": """
-                Search for results from employee engagement surveys in the documents. Look for terms like 'engagement survey results,' 'employee satisfaction survey,' or 'engagement metrics.' or 'ESat survey' and provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarize the actual feedback.
-""",
 "Glassdorr Score": """
                 Locate the company's Glassdoor score. Use terms like 'Glassdoor score,' 'Glassdoor rating,' or 'employee reviews score.' Provide the current rating and a summary of  how many reviews are being considered. Do not summarize the actual reviews.
-""",
-"Online Forums Mentions": """
-                Pull verbatim online mentions of the company name and  the feedback about the company as an employer. Use keywords like 'feedback,' 'opinions,' 'reviews,' and 'perception. Provide the names of forums and how many mentions considered.
 """,
 "What Retains Talent": """
                 Identify the top three reasons why talent tends to stay with the company. Search the document for key phrases such as 'What Retains Talent,' 'Why Talent Chooses Us,' or similar terms. Summarize the common themes and specific factors that contribute to employee retention, highlighting any notable policies, benefits, or cultural aspects that are frequently mentioned.
@@ -486,6 +476,18 @@ audience_wise_messaging_query = {
 "Offer Drops":"""
     What people who did not accept client's offer are saying about client company.
     Create a small summary and don't give generalized results.
+""",
+"Exit Interview Feedback Summary": """
+                Find feedback from exited employees about the company. Use keywords like 'exit feedback,' 'leaving form,' or 'exit interview'. Provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarize the actual feedback. 
+""",
+"Employee Feedback Summary": """
+                Find feedback from current or former employees about the company. Use keywords like 'employee feedback,' 'staff opinions,' or 'employee reviews' or 'HR complaints'.  Provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarise the actual feedback.
+""",
+"Engagement Survey Result Summary": """
+                Search for results from employee engagement surveys in the documents. Look for terms like 'engagement survey results,' 'employee satisfaction survey,' or 'engagement metrics.' or 'ESat survey' and provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarize the actual feedback.
+""",
+"Online Forums Mentions": """
+                Pull verbatim online mentions of the company name and  the feedback about the company as an employer. Use keywords like 'feedback,' 'opinions,' 'reviews,' and 'perception. Provide the names of forums and how many mentions considered.
 """
 }
 
@@ -651,6 +653,10 @@ def get_develop_data_from_vector_database(company_name, user):
         recruiters = json_data.get("Recruiters", ""),
         clients = json_data.get("Clients", ""),
         offer_drops = json_data.get("Offer Drops", ""),
+        exit_interview_feedback = json_data.get("Exit Interview Feedback Summary", ""),
+        employee_feedback_summary = json_data.get("Employee Feedback Summary", ""),
+        engagement_survey_results = json_data.get("Engagement Survey Result Summary", ""),
+        online_forums_mentions = json_data.get("Online Forums Mentions", ""),
     )
 
 def get_talent_insights_from_chatgpt(company_name, all_talent_dataset):
@@ -1384,28 +1390,29 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, all_touchPoints, top
                 )
                 chat_response = completion.choices[0].message.content
                 json_data[stage][touchpoint] = chat_response
-
-    for stage_name, touchpoints in json_data.items():
-        stage, created = EVPEmbedmentStage.objects.get_or_create(
-            user = user,
-            company = company,
-            stage_name = stage_name
-        )
-        for touchpoint_name, message_content in touchpoints.items():
-            touchpoint, created = EVPEmbedmentTouchpoint.objects.get_or_create(
-                user = user,
-                company = company,
-                stage = stage,
-                touchpoint_name = touchpoint_name,
-            )
-            EVPEmbedmentMessage.objects.create(
-                user = user,
-                company = company,
-                touchpoint = touchpoint,
-                message = message_content,
-            )
-    
     return json_data
+
+    # for stage_name, touchpoints in json_data.items():
+    #     stage, created = EVPEmbedmentStage.objects.get_or_create(
+    #         user = user,
+    #         company = company,
+    #         stage_name = stage_name
+    #     )
+    #     for touchpoint_name, message_content in touchpoints.items():
+    #         touchpoint, created = EVPEmbedmentTouchpoint.objects.get_or_create(
+    #             user = user,
+    #             company = company,
+    #             stage = stage,
+    #             touchpoint_name = touchpoint_name,
+    #         )
+    #         EVPEmbedmentMessage.objects.create(
+    #             user = user,
+    #             company = company,
+    #             touchpoint = touchpoint,
+    #             message = message_content,
+    #         )
+    
+    # return json_data
 
 def get_evp_handbook_data_from_chatgpt(company_name, user, top_4_themes_data, messaging_hierarchy_data, evp_promise_data, evp_audit_data):
 

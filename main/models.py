@@ -68,11 +68,7 @@ class Company(models.Model):
     facebook_info = models.TextField(null=True, blank=True)
     twitter_info = models.TextField(null=True, blank=True)
     internal_comms_channels = models.TextField(null=True, blank=True)
-    exit_interview_feedback = models.TextField(null=True, blank=True)
-    employee_feedback_summary = models.TextField(null=True, blank=True)
-    engagement_survey_results = models.TextField(null=True, blank=True)
     glassdoor_score = models.TextField(null=True, blank=True)
-    online_forums_mentions = models.TextField(null=True, blank=True)
     what_retains_talent = models.TextField(null=True, blank=True)
     what_attracts_talent = models.TextField(null=True, blank=True)
     employee_value_proposition = models.TextField(null=True, blank=True)
@@ -213,6 +209,10 @@ class AudienceWiseMessaging(models.Model):
     recruiters = models.TextField(null=True, blank=True)
     clients = models.TextField(null=True, blank=True)
     offer_drops = models.TextField(null=True, blank=True)
+    exit_interview_feedback = models.TextField(null=True, blank=True)
+    employee_feedback_summary = models.TextField(null=True, blank=True)
+    engagement_survey_results = models.TextField(null=True, blank=True)
+    online_forums_mentions = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.company.name} - Audience-Wise Messaging"

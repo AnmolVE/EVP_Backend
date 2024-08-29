@@ -43,11 +43,7 @@ class CompanyAdmin(admin.ModelAdmin):
                     'facebook_info',
                     'twitter_info',
                     'internal_comms_channels',
-                    'exit_interview_feedback',
-                    'employee_feedback_summary',
-                    'engagement_survey_results',
                     'glassdoor_score',
-                    'online_forums_mentions',
                     'what_retains_talent',
                     'what_attracts_talent',
                     'employee_value_proposition',
@@ -94,7 +90,7 @@ class KeyThemesAdmin(admin.ModelAdmin):
     list_filter = ["company"]
 
 class AudienceWiseMessagingAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "company", "existing_employees", "alumni", "targeted_talent", "leadership", "recruiters", "clients", "offer_drops"]
+    list_display = ["id", "user", "company", "existing_employees", "alumni", "targeted_talent", "leadership", "recruiters", "clients", "offer_drops", "exit_interview_feedback", "employee_feedback_summary", "engagement_survey_results", "online_forums_mentions"]
     list_filter = ["company"]
 
 class SwotAnalysisAdmin(admin.ModelAdmin):

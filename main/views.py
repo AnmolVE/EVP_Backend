@@ -1348,7 +1348,7 @@ class EVPEmbedmentAPIView(APIView):
 
         evp_promise_data_list = []
         for instance in evp_promise_instances:
-            data = f"{instance.what_makes_this_theme_distinctive} {instance.what_employees_can_expect} {instance.what_is_expected_of_employees}"
+            data = f"{instance.what_employees_can_expect} {instance.what_is_expected_of_employees}"
             evp_promise_data_list.append(data)
 
         evp_promise_data = " ".join(evp_promise_data_list)
