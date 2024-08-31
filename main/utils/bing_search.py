@@ -31,6 +31,11 @@ from ..serializers import (
 from ..utils.chatgpt import get_data_from_chatgpt_2
 
 bing_query_data = [
+        "Headquarters",
+        "Established Date",
+        "About the company",
+        "Industry",
+        "Company History",
         "Company Financials",
         "Top 3 Competitors",
         "Number of Employees",

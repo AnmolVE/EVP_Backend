@@ -249,9 +249,9 @@ class SearchWebsiteView(APIView):
 
             final_data.update(data_from_bing)
 
-            data_from_chatgpt_1 = get_data_from_chatgpt_1(company_name, chatgpt_1_query_data)
+            # data_from_chatgpt_1 = get_data_from_chatgpt_1(company_name, chatgpt_1_query_data)
 
-            final_data.update(data_from_chatgpt_1)
+            # final_data.update(data_from_chatgpt_1)
 
         saved_data_in_database_in_string = save_data_to_database(final_data, company_name, user)
         

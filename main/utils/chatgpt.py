@@ -25,7 +25,6 @@ chatgpt_1_query_data = {
     "About the company": "",
     "Industry": "",
     "Company History": "",
-    "What Attracts Talent": "",
 }
 
 def get_data_from_chatgpt_1(company_name, fields_to_query_with_chatgpt_1):
