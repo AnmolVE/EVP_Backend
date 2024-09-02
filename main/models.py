@@ -82,6 +82,14 @@ class Company(models.Model):
     def __str__(self):
         return self.name
     
+class DesignPrinciples(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    design_principles = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company.name} - {self.design_principles}"
+    
 class TalentDataset(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)

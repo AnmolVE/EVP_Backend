@@ -735,7 +735,7 @@ swot_analysis_query = {
 """
 }
 
-def get_dissect_data_from_vector_database(company_name, user):
+def get_dissect_data_from_vector_database(company_name, user, design_principles):
     company = Company.objects.get(user=user, name=company_name)
     company_id = company.id
 
@@ -792,99 +792,51 @@ def get_dissect_data_from_vector_database(company_name, user):
         what_is_working_well_for_the_organization = json_data.get("what_is_working_well_for_the_organization", ""),
         what_is_not_working_well_for_the_organization = json_data.get("what_is_not_working_well_for_the_organization", ""),
     )
-
-    embeddings = create_embeddings()
-    
-    sanitized_company_name = re.sub(r'\s+', '_', company_name)
-    persistent_directory = f"vector_databases/{sanitized_company_name}"
-    if os.path.exists(os.path.join(persistent_directory)):
-        chroma_client = chromadb.PersistentClient(path=persistent_directory)
-        design_collection = chroma_client.get_collection(
-            name="test_design",
-            embedding_function=embeddings,
-        )
-
-        query_results = design_collection.query(
-                query_texts=["Create a summary of the whole data within 300 words"],
-                n_results=5,
-            )
-        fetched_documents = " ".join(query_results["documents"][0])
-
-        prompt = f"""
-        Use and Analyze the following pieces of data to fetch the information from it
-
-        Context: <{fetched_documents}>
-
-        Create a summary of the whole context data within 300 words. 
-        """
-
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = [
-                {
-                    "role":"system",
-                    "content":"""You are an expert in fetching information from the given unstructured data.
-                              Instructions:
-                              - Only answer questions related to the user's query
-                              - If you're unsure of an answer, you can say "I don't know".
-                              """
-                },
-                {
-                    "role":"user",
-                    "content":prompt
-                }
-            ],
-        temperature=0.3,
-        max_tokens=4000,
-        )
-        chat_response = completion.choices[0].message.content
-        dataset_2 = chat_response
-        print(dataset_2)
         
-        prompt2 = f"""First analyze both datasets below:
+    prompt = f"""First analyze both datasets below:
 
-            Review the primary research available in entire Dataset 1 (both sections 'whats working well' and whats not working well).
-            **Dataset 1** : {formatted_string}
+        Review the primary research available in entire Dataset 1 (both sections 'whats working well' and whats not working well).
+        **Dataset 1** : {formatted_string}
 
-            **Dataset 2**: {dataset_2}
+        **what we want to be known for**: {design_principles}
 
-            Now using the information available in Dataset 1, create a summary for each point mentioned in 'what we want to be known for' section in the Dataset 2.
-            Give me all positive and negative aspects about every point after analyzing whole data.
+        Now using the information available in Dataset 1, create a summary for each point mentioned in 'what we want to be known for' section.
+        Give me all positive and negative aspects about every point after analyzing whole data.
 
-            The summary for each point should be divided into two sub-sections. 
+        The summary for each point should be divided into two sub-sections. 
 
-            1) Positive Aspects - what is working well for the organization. Focus on aspects that employees and external reviewers consistently compliment or express happiness and positivity about. Provide detailed insights on these positive aspects and how they improve employee satisfaction and the overall performance of the organization.
+        1) Positive Aspects - what is working well for the organization. Focus on aspects that employees and external reviewers consistently compliment or express happiness and positivity about. Provide detailed insights on these positive aspects and how they improve employee satisfaction and the overall performance of the organization.
 
-            2) Negative Aspects - what is not working well for the organization. Focus on aspects that employees and external reviewers consistently criticize or express concerns about. Provide detailed insights on these negative aspects and how they impact employee satisfaction and the overall performance of the organization.
+        2) Negative Aspects - what is not working well for the organization. Focus on aspects that employees and external reviewers consistently criticize or express concerns about. Provide detailed insights on these negative aspects and how they impact employee satisfaction and the overall performance of the organization.
 
-            YOU ARE ONLY ALLOWED TO EXTRACT INFORMATION FROM THE DATA AVAILABLE IN DATASET 1 FOR EVERY POINT.
-            IF THE INFORMATION IS NOT AVAILABLE PLEASE SAY - "The information is not available".
+        YOU ARE ONLY ALLOWED TO EXTRACT INFORMATION FROM THE DATA AVAILABLE IN DATASET 1 FOR EVERY POINT.
+        IF THE INFORMATION IS NOT AVAILABLE PLEASE SAY - "The information is not available".
 
-            Don't only look for exact word or phrase match - you should be intelligent enough to co-relate different points.
-            Focus on the essence of what is being said and not specific key words.
+        Don't only look for exact word or phrase match - you should be intelligent enough to co-relate different points.
+        Focus on the essence of what is being said and not specific key words.
 
-            Arrange all points in numbers.
-        """
-        message_text = [
-            {"role": "system", "content": f"You are an expert in fetching information from the given context and and you cannot look outside of the given data."},
-            {"role": "user", "content": prompt2}
-        ]
+        Arrange all points in numbers.
+    """
+    message_text = [
+        {"role": "system", "content": f"You are an expert in fetching information from the given context and and you cannot look outside of the given data."},
+        {"role": "user", "content": prompt}
+    ]
 
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = message_text,
-        temperature=0.1,
-        max_tokens=4000,
-        )
-        response2 = completion.choices[0].message.content
-        json_data["what we want to be known for"] = response2
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    messages = message_text,
+    temperature=0.1,
+    max_tokens=4000,
+    )
+    response2 = completion.choices[0].message.content
+    json_data["what we want to be known for"] = response2
 
-        alignment = Alignment.objects.create(
-            user=user,
-            company=company,
-            what_we_want_to_be_known_for = json_data.get("what we want to be known for", "")
-        )
-        return json_data
+    alignment = Alignment.objects.create(
+        user=user,
+        company=company,
+        what_we_want_to_be_known_for = json_data.get("what we want to be known for", "")
+    )
+    return json_data
         
 
 def get_design_data_from_database(company_name, user):

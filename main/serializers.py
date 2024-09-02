@@ -34,6 +34,11 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = '__all__'
 
+class DesignPrinciplesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DesignPrinciples
+        fields = "__all__"
+
 class TalentDatasetSerializer(serializers.ModelSerializer):
     class Meta:
         model = TalentDataset

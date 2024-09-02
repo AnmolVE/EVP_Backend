@@ -54,6 +54,10 @@ class CompanyAdmin(admin.ModelAdmin):
                 ]
     list_filter = ['industry']
 
+class DesignPrinciplesAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "design_principles"]
+    list_filter = ["company"]
+
 class TalentDatasetAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "area", "role", "location", "seniority", "key_motivators"]
 
@@ -147,6 +151,7 @@ class EVPStatementAndPillarsAdmin(admin.ModelAdmin):
 
 admin.site.register(NewUser, NewUserAdmin)
 admin.site.register(Company, CompanyAdmin)
+admin.site.register(DesignPrinciples, DesignPrinciplesAdmin)
 admin.site.register(TalentDataset, TalentDatasetAdmin)
 admin.site.register(Perception, PerceptionAdmin)
 admin.site.register(Loyalty, LoyaltyAdmin)

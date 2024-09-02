@@ -197,6 +197,55 @@ class MasterVectorDatabaseAPIView(APIView):
         
         return Response({"error": "Please upload at least one document"}, status=status.HTTP_400_BAD_REQUEST)
     
+class homePageAPIView(APIView):
+    def post(self, request):
+        company_name = request.data.get("company_name")
+
+        RESPONSE_JSON = {
+            "facts": {
+                "fact1": "response",
+                "fact2": "response",
+            }
+        }
+
+        prompt = f"""
+                    I want to find specific facts about the company named {company_name}.
+
+                    So, find the facts about the company above and returns the response in json format:
+
+                    Come up with 9 interesting facts about the company.
+                    Showcase a mix of talent and employees-centric facts as well as business and strategy-centric facts.
+                    Each fact should be no more than 15 to 20 words.
+
+                    Make sure to format your response exactly like {RESPONSE_JSON} and use it as a guide.
+                    Replace response with the actual fact and every response should contain the company name..
+                """
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={"type": "json_object"},
+        messages = [
+            {
+                "role":"system",
+                "content":"You are an expert research analyst"
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0.3,
+        max_tokens=2000,
+        )
+        chat_response = completion.choices[0].message.content
+        try:
+            json_response = json.loads(chat_response)
+            json_response = json_response["facts"]
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            json_response = {}
+        return Response(json_response, status=status.HTTP_200_OK)
+
 class SearchWebsiteView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -237,11 +286,11 @@ class SearchWebsiteView(APIView):
 
             final_data.update(data_with_values_from_bing)
 
-            fields_to_query_with_chatgpt_1 = {field: "" for field in chatgpt_1_query_data if field in empty_fields_from_langchain}
+            # fields_to_query_with_chatgpt_1 = {field: "" for field in chatgpt_1_query_data if field in empty_fields_from_langchain}
 
-            if (len(fields_to_query_with_chatgpt_1) > 0):
-                data_from_chatgpt_1 = get_data_from_chatgpt_1(company_name, fields_to_query_with_chatgpt_1)
-                final_data.update(data_from_chatgpt_1)
+            # if (len(fields_to_query_with_chatgpt_1) > 0):
+            #     data_from_chatgpt_1 = get_data_from_chatgpt_1(company_name, fields_to_query_with_chatgpt_1)
+            #     final_data.update(data_from_chatgpt_1)
 
         else:
             print("In else block")
@@ -313,11 +362,16 @@ class DissectAPIView(APIView):
             return Response("Instance already created", status=status.HTTP_200_OK)
         
         try:
-            dissect_data_from_vector_database = get_dissect_data_from_vector_database(company_name, user)
+            design_principles_instance = DesignPrinciples.objects.get(user=user, company=company)
+            design_principles = design_principles_instance.design_principles
+        except DesignPrinciples.DoesNotExist:
+            return Response({'error': 'Design Principles not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            dissect_data_from_vector_database = get_dissect_data_from_vector_database(company_name, user, design_principles)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        # return Response(dissect_data_from_vector_database, status=status.HTTP_200_OK)
         return Response("dissect_data_from_vector_database", status=status.HTTP_200_OK)
     
 class DesignAPIView(APIView):
@@ -525,54 +579,33 @@ class DesignPrinciplesAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, company_name):
+        user = request.user
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"message": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        if "documents" in request.FILES:
-            if os.path.exists("media\documents"):
-                for filename in os.listdir("media\documents"):
-                    file_path = os.path.join("media\documents", filename)
-                    try:
-                        if os.path.isfile(file_path) or os.path.islink(file_path):
-                            os.unlink(file_path)
-                        elif os.path.isdir(file_path):
-                            shutil.rmtree(file_path)
-                    except Exception as e:
-                        print(f'Failed to delete {file_path}. Reason: {e}')
-            uploaded_documents = request.FILES.getlist("documents")
-            all_documents = []
-            for document in uploaded_documents:
-                response = save_documents(document, "documents")
-                all_documents.append(response)
-            merge_documents("media\documents", "final_pdf", "merged_pdf.pdf")
-            loader = PyPDFLoader(r"media\final_pdf\merged_pdf.pdf")
-            document_data = loader.load()
-    
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=20)
-            text_chunks = text_splitter.split_documents(document_data)
-            documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
-            ids=[f"id{i}" for i in range(len(documents))]
-            embeddings = create_embeddings()
-            embedded_documents = embeddings([documents[i] for i in range(len(documents))])
-        else:
-            text_chunks = []
- 
-        sanitized_company_name = re.sub(r'\s+', '_', company_name)
+        design_principles_list = request.data.get("design_principles")
+        design_principles_string = "\n".join([f"{i + 1}. {item}" for i, item in enumerate(design_principles_list)])
 
-        persistent_directory = f"vector_databases/{sanitized_company_name}"
-        chroma_client = chromadb.PersistentClient(path=persistent_directory)
-        if os.path.exists(os.path.join(persistent_directory)):
-            if text_chunks:
-                chatbot_collection = chroma_client.get_or_create_collection(
-                    name="test_design",
-                    embedding_function=embeddings,
-                )
+        existing_design_principles = DesignPrinciples.objects.filter(user=user, company=company).first()
 
-                chatbot_collection.add(
-                    embeddings=embedded_documents,
-                    documents=documents,
-                    ids=ids,
-                )
-                return Response("Design Principles added successfully", status=status.HTTP_201_CREATED)
-        return Response("Please upload at least one document", status=status.HTTP_400_BAD_REQUEST)
+        if existing_design_principles:
+            return Response(
+                "Design Principles already exist",
+                status=status.HTTP_200_OK
+            )
+
+        DesignPrinciples.objects.create(
+            user=user,
+            company=company,
+            design_principles = design_principles_string,
+        )
+
+        return Response(
+            "Design Principles saved successfully",
+            status=status.HTTP_201_CREATED
+        )
     
 class CompanySpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
