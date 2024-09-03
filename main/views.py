@@ -218,7 +218,7 @@ class homePageAPIView(APIView):
                     Each fact should be no more than 15 to 20 words.
 
                     Make sure to format your response exactly like {RESPONSE_JSON} and use it as a guide.
-                    Replace response with the actual fact and every response should contain the company name..
+                    Replace response with the actual fact and every response should contain the company name.
                 """
 
         completion = chat_client.chat.completions.create(
@@ -245,6 +245,92 @@ class homePageAPIView(APIView):
             print(f"Failed to parse JSON response: {e}")
             json_response = {}
         return Response(json_response, status=status.HTTP_200_OK)
+
+class TalentInsightsHomeAPIView(APIView):
+    def post(self, request):
+        
+        talent_insights = request.data.get("talent_insights")
+        skill = talent_insights["skill"]
+        sub_skill = talent_insights["sub_skill"]
+        role = talent_insights["role"]
+        geography = talent_insights["geography"]
+
+        prompt = f"""
+                    I want to create a candidate persona according to the below query:
+
+                    Selected Skill : {skill}
+                    Selected Sub skill : {sub_skill}
+                    Selected Role : {role}
+                    Selected Geography : {geography}
+
+                    Create a candidate persona for the selected Skill, Sub Skill, Role and geography.
+                    Focus on items like typical educational qualifications, work experience, companies worked at, key career motivators, typical salaries, preferred online forums, topics of interest, recommended training programs.
+
+                """
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+            {
+                "role":"system",
+                "content":"You are an expert research analyst"
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0.3,
+        max_tokens=2000,
+        )
+        chat_response = completion.choices[0].message.content
+        return Response(
+            {"candidate_persona": chat_response},
+            status=status.HTTP_200_OK
+        )
+    
+class IndustryTrendsHomeAPIView(APIView):
+    def post(self, request):
+        company_name = request.data.get("company_name")
+        if not company_name:
+            return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        industry_trends = request.data.get("industry_trends")
+        industry = industry_trends["industry"]
+        sub_industry = industry_trends["sub_industry"]
+
+        prompt = f"""
+                    I want to find the trends according to below query:
+
+                    Selected Industry: {industry}
+                    Selected Sub Industry: {sub_industry}
+
+                    Source the latest trends in the selected Sub Industry.
+                    Focus on market forces, latest news, technologies, geo-political forces, demographic inputs.
+                    Then create a section on possibilities and implications for the talent market from a hiring and retention standpoint.
+
+                """
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+            {
+                "role":"system",
+                "content":"You are an expert research analyst"
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0.3,
+        max_tokens=2000,
+        )
+        chat_response = completion.choices[0].message.content
+        return Response(
+            {"latest_trends": chat_response},
+            status=status.HTTP_200_OK
+        )
 
 class SearchWebsiteView(APIView):
     permission_classes = [IsAuthenticated]
