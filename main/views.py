@@ -255,8 +255,25 @@ class TalentInsightsHomeAPIView(APIView):
         role = talent_insights["role"]
         geography = talent_insights["geography"]
 
+        RESPONSE_JSON = {
+            "name": "Name of the person",
+            "age": "Age of the person",
+            "location": "location",
+            "highest_qualification": "Qualification in not more than 20 words",
+            "work_experience": "Work experience in not more then 20 words",
+            "previous_companies": "Previous companies in not more than 20 words",
+            "salary_inr": "Salary package",
+            "personality": "Use the Briggs Myer Personality Index to determine what personality this typical candidate persona would fall under and create it in 100 words",
+            "goals": "Goals in 3 points and points in numbers",
+            "frustration": "Frustration in 3 points and points in numbers",
+            "bio": "Bio description within 50 words",
+            "motivation": "3 key motivators and points in numbers",
+            "topics_of_interest": "Create within 3 points and points in numbers",
+            "preferred_channels": "3 preferred channels and points in numbers",
+        }
+
         prompt = f"""
-                    I want to create a candidate persona according to the below query:
+                    Create a candidate persona according to the below query and returns response in json format:
 
                     Selected Skill : {skill}
                     Selected Sub skill : {sub_skill}
@@ -264,12 +281,18 @@ class TalentInsightsHomeAPIView(APIView):
                     Selected Geography : {geography}
 
                     Create a candidate persona for the selected Skill, Sub Skill, Role and geography.
-                    Focus on items like typical educational qualifications, work experience, companies worked at, key career motivators, typical salaries, preferred online forums, topics of interest, recommended training programs.
+                    It will contain Name, Age, Location, Highest Qualification, Work Experience, Previous Companies, Salary INR, Personality, Goals, Frustration, Bio, Motivation, Topics of Interest and Preferred Channels.
 
+                    Make sure to format your response exactly like {RESPONSE_JSON} and use it as a guide.
+
+                    The keys will remain same and the value will be replaced with the actual information.
+
+                    And do not create set or anything for points, I just want a string with line gap after each point
                 """
 
         completion = chat_client.chat.completions.create(
         model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={"type": "json_object"},
         messages = [
             {
                 "role":"system",
@@ -284,16 +307,19 @@ class TalentInsightsHomeAPIView(APIView):
         max_tokens=2000,
         )
         chat_response = completion.choices[0].message.content
+        try:
+            json_response = json.loads(chat_response)
+            print(json_response)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            json_response = {}
         return Response(
-            {"candidate_persona": chat_response},
+            json_response,
             status=status.HTTP_200_OK
         )
     
 class IndustryTrendsHomeAPIView(APIView):
     def post(self, request):
-        company_name = request.data.get("company_name")
-        if not company_name:
-            return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         industry_trends = request.data.get("industry_trends")
         industry = industry_trends["industry"]
