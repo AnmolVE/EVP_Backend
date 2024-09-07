@@ -913,6 +913,69 @@ def get_design_data_from_database(company_name, user):
 
     return json_response["themes"]
 
+def get_regenerated_theme(company_name, user, theme_to_regenerate):
+    company = Company.objects.get(user=user, name=company_name)
+    company_id = company.id
+
+    analysis_vector = SwotAnalysis.objects.get(user=user, company=company_id)
+    analysis_vector_serializer = SwotAnalysisSerializer(analysis_vector)
+
+    alignment_vector = Alignment.objects.get(user=user, company=company_id)
+    alignment_vector_serializer = AlignmentSerializer(alignment_vector)
+
+    whole_data = {
+        "analysis_vector": analysis_vector_serializer.data,
+        "alignment_vector": alignment_vector_serializer.data,
+    }
+
+    formatted_string = json.dumps(whole_data)
+
+    RESPONSE_JSON = {
+        "regenerated_theme": theme_to_regenerate
+    }
+
+    prompt = f"""
+                I want to regenerate the given themes using the given information.
+                So regenerate the theme and returns the data in json format.
+
+                Given Information : {formatted_string}
+
+                Given Themes : {theme_to_regenerate}
+
+                Regenerate both tab name and tabs data as well as i want to get both to be changed.
+                And don't create headings in tabs data only paragraph.
+
+                Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+                Replace headings and description with the actual value.
+        """
+
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are a helpful expert research assistant.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+        json_response = json_response["regenerated_theme"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+
+    return json_response
+
 def get_tagline(
         main_theme,
         combined_tabs_data,

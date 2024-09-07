@@ -14,6 +14,7 @@ urlpatterns = [
     path("develop/", DevelopAPIView.as_view(), name="develop"),
     path("dissect/", DissectAPIView.as_view(), name="dissect"),
     path("design/", DesignAPIView.as_view(), name="design"),
+    path("themes-regenerate/", Top4ThemesRegenerateAPIView.as_view(), name="themes-regenerate"),
     path("send-mail/", SendMailAPIView.as_view(), name="send-mail"),
     path("transcript/<str:company_name>/", TranscriptAPIView.as_view(), name="transcript"),
     path("design-principles/<str:company_name>/", DesignPrinciplesAPIView.as_view(), name="design-principles"),

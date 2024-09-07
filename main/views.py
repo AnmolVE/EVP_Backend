@@ -52,6 +52,7 @@ from .utils.langchaining import (
     get_talent_insights_from_chatgpt,
     get_dissect_data_from_vector_database,
     get_design_data_from_database, get_tagline,
+    get_regenerated_theme,
     get_creative_direction_from_chatgpt,
     get_evp_definition_from_chatgpt,
     get_evp_promise_from_chatgpt,
@@ -524,6 +525,34 @@ class DesignAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response(design_data_from_vector_database, status=status.HTTP_200_OK)
+    
+class Top4ThemesRegenerateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        if not company_name:
+            return Response({"error": "company_name parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # if MessagingHierarchyTabs.objects.filter(user=user, company=company).exists():
+        #     messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company)
+        #     serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs, many=True)
+        #     return Response(serializer.data, status=status.HTTP_200_OK)
+
+        theme_to_regenerate = request.data.get("theme_to_regenerate")
+        print(theme_to_regenerate)
+        regenerate_theme = get_regenerated_theme(company_name, user, theme_to_regenerate)
+
+        return Response(
+            regenerate_theme,
+            status=status.HTTP_200_OK
+        )
 
 class ChatBotAPIView(APIView):
     permission_classes = [IsAuthenticated]
