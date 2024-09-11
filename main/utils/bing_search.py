@@ -41,7 +41,7 @@ bing_query_data = [
         "Number of Employees",
         "Number of Geographies",
         "LinkedIn URL and followers",
-        "Instagram UR and followers",
+        "Instagram URL and followers",
         "Tiktok URL and followers",
         "Facebook URL and followers",
         "Twitter(X) URL and followers",
@@ -80,7 +80,7 @@ def get_data_from_bing(company_name, fields_to_query_with_bing):
                     'count': 50,
                     # "offset": i,
                     # "mkt": mkt,
-                    # "freshness": "Month"
+                    "freshness": "Month"
                 }
             response = requests.get(endpoint, headers=headers, params=params)
 

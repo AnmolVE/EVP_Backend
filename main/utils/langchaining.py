@@ -25,6 +25,7 @@ from ..models import (
 
 from ..serializers import (
     TalentDatasetSerializer,
+    TalentInsightsSerializer,
     AttributesOfGreatPlaceSerializer,
     KeyThemesSerializer,
     AudienceWiseMessagingSerializer,
@@ -659,8 +660,7 @@ def get_develop_data_from_vector_database(company_name, user):
         online_forums_mentions = json_data.get("Online Forums Mentions", ""),
     )
 
-def get_talent_insights_from_chatgpt(company_name, all_talent_dataset):
-    company = Company.objects.get(name=company_name)
+def get_talent_insights_from_chatgpt(user, company, all_talent_dataset):
     embeddings = create_embeddings()
 
     client = chromadb.PersistentClient(path="vector_databases/MasterVectorDatabase")
@@ -695,6 +695,7 @@ def get_talent_insights_from_chatgpt(company_name, all_talent_dataset):
         After searching, create a short paragraph to summarize it 100 words.
 
         Your task is to fill the actual data as the value of key_motivators in each object using the given dataset.
+        And do not repeat key_motivators in multiple objects.
 
         Make sure to format the response in json exactly like {RESPONSE_JSON} and use it as a guide.
         Fill the vale of key_motivators with the actual information.
@@ -720,11 +721,26 @@ def get_talent_insights_from_chatgpt(company_name, all_talent_dataset):
     chat_response = completion.choices[0].message.content
     try:
         json_response = json.loads(chat_response)
+        json_response = json_response["talent_insights"]
     except json.JSONDecodeError as e:
         print(f"Failed to parse JSON response: {e}")
         json_response = {}
-    talent_insights = json_response["talent_insights"]
-    return talent_insights
+    
+    for insight in json_response:
+        insight_id = insight.get("id")
+        key_motivators = insight.get("key_motivators")
+
+        if insight_id and key_motivators:
+            try:
+                talent_dataset = TalentDataset.objects.get(id=insight_id)
+                talent_dataset.key_motivators = key_motivators
+                talent_dataset.save()
+            except TalentDataset.DoesNotExist:
+                pass
+
+    talent_insights = TalentDataset.objects.filter(user=user, company=company)
+    serializer = TalentInsightsSerializer(talent_insights, many=True)
+    return serializer.data
 
 swot_analysis_query = {
 "what_is_working_well_for_the_organization": """Identify the attributes that highlight what is working well for the organization. Focus on aspects that employees and external reviewers consistently praise or express satisfaction with. Provide detailed insights on these positive aspects and how they contribute to the overall success and positive reputation of the organization.
@@ -800,20 +816,16 @@ def get_dissect_data_from_vector_database(company_name, user, design_principles)
 
         **what we want to be known for**: {design_principles}
 
-        Now using the information available in Dataset 1, create a summary for each point mentioned in 'what we want to be known for' section.
-        Give me all positive and negative aspects about every point after analyzing whole data.
+        -Identify and extract 5 key themes that the company wants to be known for, based on the design principles questions.
+        -Using the information available in Dataset 1,provide a detailed summary that captures both positive and negative aspects for each theme.
 
-        The summary for each point should be divided into two sub-sections. 
+        -Output Structure: Each summary should be divided into two sub-sections:
+            Positive Aspects: Detail what is working well for the organization. Focus on elements that employees and external reviewers consistently highlight with positivity. Provide specific insights on how these positive aspects contribute to employee satisfaction and overall organizational performance.
+            Negative Aspects: Detail what is not working well for the organization. Highlight recurring criticisms or concerns raised by employees and external reviewers. Provide specific insights on how these negative aspects impact employee satisfaction and overall organizational performance.
 
-        1) Positive Aspects - what is working well for the organization. Focus on aspects that employees and external reviewers consistently compliment or express happiness and positivity about. Provide detailed insights on these positive aspects and how they improve employee satisfaction and the overall performance of the organization.
-
-        2) Negative Aspects - what is not working well for the organization. Focus on aspects that employees and external reviewers consistently criticize or express concerns about. Provide detailed insights on these negative aspects and how they impact employee satisfaction and the overall performance of the organization.
-
-        YOU ARE ONLY ALLOWED TO EXTRACT INFORMATION FROM THE DATA AVAILABLE IN DATASET 1 FOR EVERY POINT.
-        IF THE INFORMATION IS NOT AVAILABLE PLEASE SAY - "The information is not available".
-
-        Don't only look for exact word or phrase match - you should be intelligent enough to co-relate different points.
-        Focus on the essence of what is being said and not specific key words.
+        -Guidelines:
+            Extract information only from Dataset 1. If information is not available, state: "The information is not available."
+            Do not rely solely on exact word or phrase matches; intelligently correlate data points by focusing on the underlying meaning and context of the responses.
 
         Arrange all points in numbers.
     """

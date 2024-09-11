@@ -4,6 +4,7 @@ from .views import *
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path("test-bing/", TestBingAPIView.as_view(), name="test-bing"),
     path("login/", LoginAPIView.as_view(), name="login"),
     path("master-vector-database/", MasterVectorDatabaseAPIView.as_view(), name="master-vector-database"),
     path("home-page/", homePageAPIView.as_view(), name="home-page"),
@@ -17,7 +18,8 @@ urlpatterns = [
     path("themes-regenerate/", Top4ThemesRegenerateAPIView.as_view(), name="themes-regenerate"),
     path("send-mail/", SendMailAPIView.as_view(), name="send-mail"),
     path("transcript/<str:company_name>/", TranscriptAPIView.as_view(), name="transcript"),
-    path("design-principles/<str:company_name>/", DesignPrinciplesAPIView.as_view(), name="design-principles"),
+    path("design-principles/", DesignPrinciplesAPIView.as_view(), name="design-principles"),
+    path("design-principles/<str:company_name>/", DesignPrinciplesSpecificAPIView.as_view(), name="design-principles-specific"),
     path("talent-dataset/", TalentDatasetAPIView.as_view(), name="talent-dataset"),
     path("companies/<str:company_name>/", CompanySpecificAPIView.as_view(), name='company-specific'),
     path("perception/<str:company_name>/", PerceptionSpecificAPIView.as_view(), name='perception-specific'),

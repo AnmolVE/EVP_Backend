@@ -85,10 +85,24 @@ class Company(models.Model):
 class DesignPrinciples(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    design_principles = models.TextField(null=True, blank=True)
+    question_1 = models.TextField(null=True, blank=True)
+    question_2 = models.TextField(null=True, blank=True)
+    question_3 = models.TextField(null=True, blank=True)
+    question_4 = models.TextField(null=True, blank=True)
+    question_5 = models.TextField(null=True, blank=True)
+    question_6 = models.TextField(null=True, blank=True)
+    question_7 = models.TextField(null=True, blank=True)
+    question_8 = models.TextField(null=True, blank=True)
+    question_9 = models.TextField(null=True, blank=True)
+    question_10 = models.TextField(null=True, blank=True)
+    question_11 = models.TextField(null=True, blank=True)
+    question_12 = models.TextField(null=True, blank=True)
+    question_13 = models.TextField(null=True, blank=True)
+    question_14 = models.TextField(null=True, blank=True)
+    question_15 = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.company.name} - {self.design_principles}"
+        return f"{self.company.name} - Design_Principles"
     
 class TalentDataset(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)

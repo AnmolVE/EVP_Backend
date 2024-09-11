@@ -68,6 +68,20 @@ chat_client = AzureOpenAI(
     api_version=AZURE_OPENAI_API_VERSION
 )
 
+subscription_key = os.environ.get('BING_SEARCH_V7_SUBSCRIPTION_KEY')
+endpoint = os.environ.get('BING_SEARCH_V7_ENDPOINT') + "/v7.0/search"
+from langchain_community.utilities import BingSearchAPIWrapper
+
+class TestBingAPIView(APIView):
+    def get(self, request):
+        search = BingSearchAPIWrapper(
+            bing_search_url=endpoint,
+            bing_subscription_key=subscription_key,
+            k=4
+        )
+        result = search.run("What is the Employee Value Proposition of Lighthouse Canton?")
+        return Response({"bing_result": result}, status=status.HTTP_200_OK)
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -103,7 +117,6 @@ class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return user.role == "Admin"
-
 
 class Testing(APIView):
     def post(self, request):
@@ -476,7 +489,7 @@ class DissectAPIView(APIView):
         
         try:
             design_principles_instance = DesignPrinciples.objects.get(user=user, company=company)
-            design_principles = design_principles_instance.design_principles
+            design_principles = DesignPrinciplesSerializer(design_principles_instance)
         except DesignPrinciples.DoesNotExist:
             return Response({'error': 'Design Principles not found'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -485,7 +498,7 @@ class DissectAPIView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        return Response("dissect_data_from_vector_database", status=status.HTTP_200_OK)
+        return Response(dissect_data_from_vector_database, status=status.HTTP_200_OK)
     
 class DesignAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -719,15 +732,15 @@ class TranscriptAPIView(APIView):
 class DesignPrinciplesAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, company_name):
+    def post(self, request):
         user = request.user
+        company_name = request.data.get("company_name")
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"message": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        design_principles_list = request.data.get("design_principles")
-        design_principles_string = "\n".join([f"{i + 1}. {item}" for i, item in enumerate(design_principles_list)])
+        design_principles = request.data.get("design_principles")
 
         existing_design_principles = DesignPrinciples.objects.filter(user=user, company=company).first()
 
@@ -740,13 +753,45 @@ class DesignPrinciplesAPIView(APIView):
         DesignPrinciples.objects.create(
             user=user,
             company=company,
-            design_principles = design_principles_string,
+            question_1=design_principles["question_1"],
+            question_2=design_principles["question_2"],
+            question_3=design_principles["question_3"],
+            question_4=design_principles["question_4"],
+            question_5=design_principles["question_5"],
+            question_6=design_principles["question_6"],
+            question_7=design_principles["question_7"],
+            question_8=design_principles["question_8"],
+            question_9=design_principles["question_9"],
+            question_10=design_principles["question_10"],
+            question_11=design_principles["question_11"],
+            question_12=design_principles["question_12"],
+            question_13=design_principles["question_13"],
+            question_14=design_principles["question_14"],
+            question_15=design_principles["question_15"],
         )
 
         return Response(
             "Design Principles saved successfully",
             status=status.HTTP_201_CREATED
         )
+    
+class DesignPrinciplesSpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, company_name):
+        user = request.user
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            design_principles = DesignPrinciples.objects.get(user=user, company=company)
+        except DesignPrinciples.DoesNotExist:
+            return Response({"error": "Design Principles does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = DesignPrinciplesSerializer(design_principles)
+        return Response(serializer.data)
     
 class CompanySpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1136,22 +1181,29 @@ class AudienceWiseMessagingSpecificAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class TalentInsightsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
+        user=request.user
         company_name = request.data.get("company_name")
         try:
-            company = Company.objects.get(name=company_name)
+            company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
         
-        talent_dataset = TalentDataset.objects.filter(company=company)
+        talent_dataset = TalentDataset.objects.filter(user=user, company=company)
 
         if not talent_dataset.exists():
             return Response({"error": "Talent Dataset does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
+        if all(dataset.key_motivators for dataset in talent_dataset):
+            serializer = TalentInsightsSerializer(talent_dataset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
         serializer = TalentInsightsSerializer(talent_dataset, many=True)
         all_talent_dataset = serializer.data
 
-        talent_insights_from_chatgpt = get_talent_insights_from_chatgpt(company_name, all_talent_dataset)
+        talent_insights_from_chatgpt = get_talent_insights_from_chatgpt(user, company, all_talent_dataset)
 
         return Response(talent_insights_from_chatgpt, status=status.HTTP_200_OK)
 
@@ -1262,9 +1314,6 @@ class TaglineAPIView(APIView):
                 pillar_3 = pillars[2] if len(pillars) > 2 else None,
                 tagline = tagline,
             )
-            print(messaging_hierarchy_data.pillar_1)
-            print(messaging_hierarchy_data.pillar_2)
-            print(messaging_hierarchy_data.pillar_3)
             messaging_hierarchy_data.save()
             serializer = MessagingHierarchyDataSerializer(messaging_hierarchy_data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1281,16 +1330,18 @@ class TaglineAPIView(APIView):
         return Response({"tagline": tagline})
     
 class MessagingHierarchySpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, company_name):
-        # user = request.user
+        user = request.user
 
         try:
-            company = Company.objects.get(name=company_name)
+            company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"error": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
         try:
-            messaging_hierarchy = MessagingHierarchyData.objects.get(company=company)
+            messaging_hierarchy = MessagingHierarchyData.objects.get(user=user, company=company)
         except MessagingHierarchyData.DoesNotExist:
             return Response({"error": "Messaging Hierarchy Data does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
