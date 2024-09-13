@@ -359,3 +359,23 @@ class EVPStatementAndPillars(models.Model):
     def __str__(self):
         return f"{self.company.name} - Statement and Pillars"
     
+
+# *******************Module 2 - Internal Communication***********************
+
+
+class ICICSI(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    question_1 = models.TextField(null=True, blank=True)
+    question_2 = models.TextField(null=True, blank=True)
+    question_3 = models.TextField(null=True, blank=True)
+    question_4 = models.TextField(null=True, blank=True)
+    question_5 = models.TextField(null=True, blank=True)
+    question_6 = models.TextField(null=True, blank=True)
+    question_7 = models.TextField(null=True, blank=True)
+    question_8 = models.TextField(null=True, blank=True)
+    question_9 = models.TextField(null=True, blank=True)
+    question_10 = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company.name} - ICICSI"

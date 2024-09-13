@@ -4,14 +4,20 @@ from .views import *
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path("testing/", Testing.as_view(), name="testing"),
     path("test-bing/", TestBingAPIView.as_view(), name="test-bing"),
+
+    path("token/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
     path("login/", LoginAPIView.as_view(), name="login"),
     path("master-vector-database/", MasterVectorDatabaseAPIView.as_view(), name="master-vector-database"),
     path("home-page/", homePageAPIView.as_view(), name="home-page"),
     path("talent-insights-home/", TalentInsightsHomeAPIView.as_view(), name="talent-insights-home"),
     path("industry-trends-home/", IndustryTrendsHomeAPIView.as_view(), name="industry-trends-home"),
-    path("search/", SearchWebsiteView.as_view(), name="search"),
     path("chatbot/", ChatBotAPIView.as_view(), name="search"),
+    
+    path("search/", SearchWebsiteView.as_view(), name="search"),
     path("develop/", DevelopAPIView.as_view(), name="develop"),
     path("dissect/", DissectAPIView.as_view(), name="dissect"),
     path("design/", DesignAPIView.as_view(), name="design"),
@@ -46,9 +52,10 @@ urlpatterns = [
     path("evp-execution-plan/<str:company_name>/", EVPExecutionPlanSpecificAPIView.as_view(), name="evp-execution-plan"),
     path("evp-statement-and-pillars/<str:company_name>/", EVPStatementAndPillarsSpecificAPIView.as_view(), name="evp-statement-and-pillars"),
 
-    path("token/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    
-    path("testing/", Testing.as_view(), name="testing"),
-    path("test-crawlbase/", TestCrawlBase.as_view(), name="test-crawlbase"),
+
+    # *******************Module 2 - Internal Communication***********************
+
+
+    path("icicsi/", ICICSIAPIView.as_view(), name="icicsi"),
+    path("icicsi/<str:company_name>/", ICICSISpecificAPIView.as_view(), name="icicsi-specific")
 ]

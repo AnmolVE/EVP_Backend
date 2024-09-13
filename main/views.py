@@ -1,4 +1,5 @@
 import os
+import json
 import re
 import shutil
 from dotenv import load_dotenv
@@ -1894,24 +1895,65 @@ class EVPExecutionPlanSpecificAPIView(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
     
-from crawlbase import CrawlingAPI
-import json
-        
-class TestCrawlBase(APIView):
+
+# *******************Module 2 - Internal Communication***********************
+
+
+
+class ICICSIAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        api = CrawlingAPI({'token': '0T_Q68sxGTE-hmTNXnN5NQ'})
+        user = request.user
+        company_name = request.data.get("company_name")
+        data = request.data
 
-        targetURL = 'https://www.reddit.com/r/pics/comments/5bx4bx/thanks_obama/'
+        try:
+            company = Company.objects.get(user=user,name=company_name)
+        except Company.DoesNotExist:
+            return Response(
+                {"error": "Company does not exist"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        icicsi_obj, created = ICICSI.objects.get_or_create(user=user, company=company)
 
-        response = api.get(targetURL, {'autoparse': 'true'})
-        if response['status_code'] == 200:
-            data = response["body"]
-            try:
-                json_response = json.loads(data)
-            except json.JSONDecodeError as e:
-                print(f"Failed to parse JSON response: {e}")
-                json_response = {}
+        serializer = ICICSISerializer(icicsi_obj, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            return Response(
+                serializer.data,
+                status=status_code
+            )
+        
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
 
-            # return Response(data)
-            return Response(json_response)
-        return Response({"error": f"Some error occurred"})
+class ICICSISpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, company_name):
+        user = request.user
+
+        try:
+            company = Company.objects.get(user=user,name=company_name)
+        except Company.DoesNotExist:
+            return Response(
+                "Company does not exist",
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        try:
+            icsi = ICICSI.objects.get(user=user, company=company)
+        except ICICSI.DoesNotExist:
+            return Response({'error': 'ICICSI does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = ICICSISerializer(icsi)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )

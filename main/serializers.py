@@ -148,3 +148,12 @@ class EVPStatementAndPillarsSerializer(serializers.ModelSerializer):
     class Meta:
         model = EVPStatementAndPillars
         fields = "__all__"
+
+
+# *******************Module 2 - Internal Communication***********************
+
+
+class ICICSISerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ICICSI
+        fields = "__all__"

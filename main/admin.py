@@ -149,6 +149,27 @@ class EVPStatementAndPillarsAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "evp_statement_document", "evp_statement_thumbnail", "evp_statement_text"]
     list_filter = ["company"]
 
+
+# *******************Module 2 - Internal Communication***********************
+
+
+class ICICSIAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "user",
+        "company",
+        "question_1",
+        "question_2",
+        "question_3",
+        "question_4",
+        "question_5",
+        "question_6",
+        "question_7",
+        "question_8",
+        "question_9",
+        "question_10",
+    ]
+
 admin.site.register(NewUser, NewUserAdmin)
 admin.site.register(Company, CompanyAdmin)
 admin.site.register(DesignPrinciples, DesignPrinciplesAdmin)
@@ -175,3 +196,9 @@ admin.site.register(EVPEmbedmentTouchpoint, EVPEmbedmentTouchpointAdmin)
 admin.site.register(EVPEmbedmentMessage, EVPEmbedmentMessageAdmin)
 admin.site.register(EVPHandbook, EVPHandbookAdmin)
 admin.site.register(EVPStatementAndPillars, EVPStatementAndPillarsAdmin)
+
+
+# *******************Module 2 - Internal Communication***********************
+
+
+admin.site.register(ICICSI, ICICSIAdmin)
