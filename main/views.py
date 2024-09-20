@@ -49,7 +49,9 @@ from .utils.langchaining import (
     create_embeddings,
     query_with_langchain,
     save_pgData_to_vector_database,
-    get_develop_data_from_vector_database,
+    get_attributes_of_great_place_from_chatgpt,
+    get_key_themes_from_chatgpt,
+    get_audience_wise_messaging_from_chatgpt,
     get_talent_insights_from_chatgpt,
     get_dissect_data_from_vector_database,
     get_design_data_from_database, get_tagline,
@@ -383,6 +385,16 @@ class SearchWebsiteView(APIView):
             return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         if "documents" in request.FILES:
+            if os.path.exists(r"media\documents"):
+                for filename in os.listdir(r"media\documents"):
+                    file_path = os.path.join(r"media\documents", filename)
+                    try:
+                        if os.path.isfile(file_path) or os.path.islink(file_path):
+                            os.unlink(file_path)
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)
+                    except Exception as e:
+                        print(f'Failed to delete {file_path}. Reason: {e}')
             uploaded_documents = request.FILES.getlist("documents")
             all_documents = []
             for document in uploaded_documents:
@@ -396,7 +408,6 @@ class SearchWebsiteView(APIView):
         if uploaded_documents:
             print("In if block")
             data_from_langchain = query_with_langchain(company_name)
-            # return Response(data_from_langchain)
 
             data_with_values_from_langchain = {field: value for field, value in data_from_langchain.items() if not re.search(r'not\s*found', value, re.IGNORECASE)}
 
@@ -405,7 +416,6 @@ class SearchWebsiteView(APIView):
             empty_fields_from_langchain = [field for field, value in data_from_langchain.items() if re.search(r'not\s*found', value, re.IGNORECASE)]
 
             fields_to_query_with_bing = [field for field in bing_query_data if field in empty_fields_from_langchain]
-            # # fields_to_query_with_bing = bing_query_data
 
             data_from_bing = get_data_from_bing(company_name, fields_to_query_with_bing)
 
@@ -438,35 +448,6 @@ class SearchWebsiteView(APIView):
 
         # return Response(data_from_langchain)
         return Response(final_data)
-
-class DevelopAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        company_name = request.data.get('company_name')
-        if not company_name:
-            return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            company = Company.objects.get(user=user, name=company_name)
-        except Company.DoesNotExist:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        company_id = company.id
-
-        if (AttributesOfGreatPlace.objects.filter(user=user, company=company_id).exists() and 
-                KeyThemes.objects.filter(user=user, company=company_id).exists() and 
-                AudienceWiseMessaging.objects.filter(company=company_id).exists()):
-            return Response("Instance already created", status=status.HTTP_200_OK)
-        
-        try:
-            develop_data_from_vector_database_in_string = get_develop_data_from_vector_database(company_name, user)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        # return Response(develop_data_from_vector_database_in_string, status=status.HTTP_200_OK)
-        return Response("develop_data_from_vector_database_in_string", status=status.HTTP_200_OK)
     
 class DissectAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1066,24 +1047,46 @@ class BrandSpecificAPIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class AttributesOfGreatPlaceSpecificAPIView(APIView):
+
+class AttributesOfGreatPlaceAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, company_name):
+    def post(self, request):
         user = request.user
+        company_name = request.data.get("company_name")
+
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        attributes_of_great_place = AttributesOfGreatPlace.objects.filter(company=company, user=user).first()
 
-        try:
-            attribute_of_great_place = AttributesOfGreatPlace.objects.get(user=user, company=company)
-        except AttributesOfGreatPlace.DoesNotExist:
-            return Response({'error': 'Attribute of Great Place does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        if attributes_of_great_place:
+            serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_place)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        attributes_of_great_place_from_chatgpt = get_attributes_of_great_place_from_chatgpt(company, company_name, user)
+        
+        attributes_of_great_workplace = AttributesOfGreatPlace.objects.create(
+            user=user,
+            company=company,
+            culture = attributes_of_great_place_from_chatgpt.get("Culture", ""),
+            purpose_and_values = attributes_of_great_place_from_chatgpt.get("Purpose and Values", ""),
+            benefits_perks = attributes_of_great_place_from_chatgpt.get("Benefits and Perks", ""),
+            career_development = attributes_of_great_place_from_chatgpt.get("Career Development", ""),
+            office_and_facilities = attributes_of_great_place_from_chatgpt.get("Office and Facilities", ""),
+            leadership_and_management = attributes_of_great_place_from_chatgpt.get("Leadership and Management", ""),
+            rewards_and_recognition = attributes_of_great_place_from_chatgpt.get("Rewards and Recognition", ""),
+            teamwork_and_collaboration = attributes_of_great_place_from_chatgpt.get("Teamwork and Collaboration", ""),
+            brand_and_reputation = attributes_of_great_place_from_chatgpt.get("Brand and Reputation", ""),
+            work_life_balance = attributes_of_great_place_from_chatgpt.get("Work life balance", ""),
+        )
+        serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_workplace)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        serializer = AttributesOfGreatPlaceSerializer(attribute_of_great_place)
-        return Response(serializer.data)
+class AttributesOfGreatPlaceSpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     
     def patch(self, request, company_name):
         data = request.data
@@ -1104,24 +1107,37 @@ class AttributesOfGreatPlaceSpecificAPIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class KeyThemesSpecificAPIView(APIView):
+
+class KeyThemesAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, company_name):
+    def post(self, request):
         user = request.user
+        company_name = request.data.get("company_name")
+
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        key_themes = KeyThemes.objects.filter(company=company, user=user).first()
 
-        try:
-            key_themes = KeyThemes.objects.get(user=user, company=company)
-        except KeyThemes.DoesNotExist:
-            return Response({'error': 'Key Themes does not exist'}, status=status.HTTP_404_NOT_FOUND)
-
+        if key_themes:
+            serializer = KeyThemesSerializer(key_themes)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        key_themes_from_chatgpt = get_key_themes_from_chatgpt(company, company_name, user)
+        
+        key_themes = KeyThemes.objects.create(
+            user=user,
+            company=company,
+            top_key_themes = key_themes_from_chatgpt.get("top_key_themes", ""),
+        )
         serializer = KeyThemesSerializer(key_themes)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class KeyThemesSpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     
     def patch(self, request, company_name):
         data = request.data
@@ -1142,24 +1158,47 @@ class KeyThemesSpecificAPIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class AudienceWiseMessagingSpecificAPIView(APIView):
+
+class AudienceWiseMessagingAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, company_name):
+    def post(self, request):
         user = request.user
+        company_name = request.data.get("company_name")
+
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        audience_wise_messaging = AudienceWiseMessaging.objects.filter(company=company, user=user).first()
 
-        try:
-            audience_wise_messaging = AudienceWiseMessaging.objects.get(user=user, company=company)
-        except AudienceWiseMessaging.DoesNotExist:
-            return Response({'error': 'Audience Wise Messaging does not exist'}, status=status.HTTP_404_NOT_FOUND)
-
+        if audience_wise_messaging:
+            serializer = AudienceWiseMessagingSerializer(audience_wise_messaging)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        audience_wise_messaging_from_chatgpt = get_audience_wise_messaging_from_chatgpt(company, company_name, user)
+        
+        audience_wise_messaging = AudienceWiseMessaging.objects.create(
+            user=user,
+            company=company,
+            existing_employees = audience_wise_messaging_from_chatgpt.get("Existing Employees", ""),
+            alumni = audience_wise_messaging_from_chatgpt.get("Alumni", ""),
+            targeted_talent = audience_wise_messaging_from_chatgpt.get("Targeted Talent", ""),
+            leadership = audience_wise_messaging_from_chatgpt.get("Leadership", ""),
+            recruiters = audience_wise_messaging_from_chatgpt.get("Recruiters", ""),
+            clients = audience_wise_messaging_from_chatgpt.get("Clients", ""),
+            offer_drops = audience_wise_messaging_from_chatgpt.get("Offer Drops", ""),
+            exit_interview_feedback = audience_wise_messaging_from_chatgpt.get("Exit Interview Feedback Summary", ""),
+            employee_feedback_summary = audience_wise_messaging_from_chatgpt.get("Employee Feedback Summary", ""),
+            engagement_survey_results = audience_wise_messaging_from_chatgpt.get("Engagement Survey Result Summary", ""),
+            online_forums_mentions = audience_wise_messaging_from_chatgpt.get("Online Forums Mentions", ""),
+        )
         serializer = AudienceWiseMessagingSerializer(audience_wise_messaging)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class AudienceWiseMessagingSpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     
     def patch(self, request, company_name):
         data = request.data

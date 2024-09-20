@@ -443,11 +443,121 @@ attributes_of_great_place_query = {
 """
 }
 
+def get_attributes_of_great_place_from_chatgpt(company, company_name, user):
+    embeddings = create_embeddings()
+    sanitized_company_name = re.sub(r'\s+', '_', company_name)
+    persistent_directory = f"vector_databases/{sanitized_company_name}"
+    if os.path.exists(os.path.join(persistent_directory)):
+        chroma_client = chromadb.PersistentClient(path=persistent_directory)
+        develop_collection = chroma_client.get_collection(
+            name="test",
+            embedding_function=embeddings,
+        )
+    print("In Attributes of Great Place")
+
+    json_data = {}
+    for key, query in attributes_of_great_place_query.items():
+        print(key)
+
+        query_results = develop_collection.query(
+                query_texts=[query],
+                n_results=10,
+            )
+        fetched_documents = " ".join(query_results["documents"][0])
+
+        prompt = f"""
+        First analyze the given information below:
+
+        Given Information: {fetched_documents}
+
+        After completely analyzing the given information, fetch the data for the below query from the given information only.
+
+        Question: {query}.
+        """
+
+        print(prompt)
+        print("*************************************************************************************************************")
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are a helpful expert research assistant.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0,
+        max_tokens=4000,
+        )
+        chat_response = completion.choices[0].message.content
+        json_data[key] = chat_response
+    return json_data
+
 key_themes_query = {
 "top_key_themes":"""
         What are some key themes related to building the company's employee value proposition? Focus on themes that help the company stand out as an attractive employer. What are unique aspects about the company that can help to attract and retain the best talent?
 """
 }
+
+def get_key_themes_from_chatgpt(company, company_name, user):
+    embeddings = create_embeddings()
+    sanitized_company_name = re.sub(r'\s+', '_', company_name)
+    persistent_directory = f"vector_databases/{sanitized_company_name}"
+    if os.path.exists(os.path.join(persistent_directory)):
+        chroma_client = chromadb.PersistentClient(path=persistent_directory)
+        develop_collection = chroma_client.get_collection(
+            name="test",
+            embedding_function=embeddings,
+        )
+    print("In Key Themes")
+
+    json_data = {}
+    for key, query in key_themes_query.items():
+        print(key)
+
+        query_results = develop_collection.query(
+                query_texts=[query],
+                n_results=10,
+            )
+        fetched_documents = " ".join(query_results["documents"][0])
+
+        prompt = f"""
+        First analyze the given information below:
+
+        Given Information: {fetched_documents}
+
+        After completely analyzing the given information, fetch the data for the below query from the given information only.
+
+        Question: {query}.
+        """
+
+        print(prompt)
+        print("*************************************************************************************************************")
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are a helpful expert research assistant.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0,
+        max_tokens=4000,
+        )
+        chat_response = completion.choices[0].message.content
+        json_data[key] = chat_response
+    return json_data
 
 audience_wise_messaging_query = {
 "Existing Employees":"""
@@ -492,7 +602,7 @@ audience_wise_messaging_query = {
 """
 }
 
-def get_develop_data_from_vector_database(company_name, user):
+def get_audience_wise_messaging_from_chatgpt(company, company_name, user):
     embeddings = create_embeddings()
     sanitized_company_name = re.sub(r'\s+', '_', company_name)
     persistent_directory = f"vector_databases/{sanitized_company_name}"
@@ -502,85 +612,9 @@ def get_develop_data_from_vector_database(company_name, user):
             name="test",
             embedding_function=embeddings,
         )
-    print("In develop")
+    print("In Audience Wise Messaging")
 
     json_data = {}
-    for key, query in attributes_of_great_place_query.items():
-        print(key)
-
-        query_results = develop_collection.query(
-                query_texts=[query],
-                n_results=10,
-            )
-        fetched_documents = " ".join(query_results["documents"][0])
-
-        prompt = f"""
-        Information: {fetched_documents} \n \n Question: {query}.
-        """
-
-        print(prompt)
-        print("*************************************************************************************************************")
-
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = [
-            {
-                "role":"system",
-                "content":"""You are a helpful expert research assistant. Your users are asking questions about information contained in the given data.
-                                You will be shown the user's question, and the relevant information from the data.
-                                After analyzing the complete information, your task is to answer the user's question using only this information.
-                                IF YOU DON'T FIND THE ANSWER IN THE GIVEN INFORMATION PLEASE SAY -- "Not found".
-                            """
-            },
-            {
-                "role":"user",
-                "content":prompt
-            }
-        ],
-        temperature=0,
-        max_tokens=4000,
-        )
-        chat_response = completion.choices[0].message.content
-        json_data[key] = chat_response
-
-    for key, query in key_themes_query.items():
-        print(key)
-
-        query_results = develop_collection.query(
-                query_texts=[query],
-                n_results=10,
-            )
-        fetched_documents = " ".join(query_results["documents"][0])
-
-        prompt = f"""
-        Information: {fetched_documents} \n \n Question: {query}.
-        """
-
-        print(prompt)
-        print("*************************************************************************************************************")
-
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = [
-            {
-                "role":"system",
-                "content":"""You are a helpful expert research assistant. Your users are asking questions about information contained in the given data.
-                                You will be shown the user's question, and the relevant information from the data.
-                                After analyzing the complete information, your task is to answer the user's question using only this information.
-                                IF YOU DON'T FIND THE ANSWER IN THE GIVEN INFORMATION PLEASE SAY -- "Not found".
-                            """
-            },
-            {
-                "role":"user",
-                "content":prompt
-            }
-        ],
-        temperature=0,
-        max_tokens=4000,
-        )
-        chat_response = completion.choices[0].message.content
-        json_data[key] = chat_response
-
     for key, query in audience_wise_messaging_query.items():
         print(key)
 
@@ -591,7 +625,13 @@ def get_develop_data_from_vector_database(company_name, user):
         fetched_documents = " ".join(query_results["documents"][0])
 
         prompt = f"""
-        Information: {fetched_documents} \n \n Question: {query}.
+        First analyze the given information below:
+
+        Given Information: {fetched_documents}
+
+        After completely analyzing the given information, fetch the data for the below query from the given information only.
+
+        Question: {query}.
         """
 
         print(prompt)
@@ -602,10 +642,7 @@ def get_develop_data_from_vector_database(company_name, user):
         messages = [
             {
                 "role":"system",
-                "content":"""You are a helpful expert research assistant. Your users are asking questions about information contained in the given data.
-                                You will be shown the user's question, and the relevant information from the data.
-                                After analyzing the complete information, your task is to answer the user's question using only this information.
-                                IF YOU DON'T FIND THE ANSWER IN THE GIVEN INFORMATION PLEASE SAY -- "Not found".
+                "content":"""You are a helpful expert research assistant.
                             """
             },
             {
@@ -618,47 +655,7 @@ def get_develop_data_from_vector_database(company_name, user):
         )
         chat_response = completion.choices[0].message.content
         json_data[key] = chat_response
-
-    # return json_data
-
-    company = Company.objects.get(user=user, name=company_name)
-
-    attributes_of_great_workplace = AttributesOfGreatPlace.objects.create(
-        user=user,
-        company=company,
-        culture = json_data.get("Culture", ""),
-        purpose_and_values = json_data.get("Purpose and Values", ""),
-        benefits_perks = json_data.get("Benefits and Perks", ""),
-        career_development = json_data.get("Career Development", ""),
-        office_and_facilities = json_data.get("Office and Facilities", ""),
-        leadership_and_management = json_data.get("Leadership and Management", ""),
-        rewards_and_recognition = json_data.get("Rewards and Recognition", ""),
-        teamwork_and_collaboration = json_data.get("Teamwork and Collaboration", ""),
-        brand_and_reputation = json_data.get("Brand and Reputation", ""),
-        work_life_balance = json_data.get("Work life balance", ""),
-    )
-
-    key_themes = KeyThemes.objects.create(
-        user=user,
-        company=company,
-        top_key_themes = json_data.get("top_key_themes", ""),
-    )
-
-    audience_wise_messaging = AudienceWiseMessaging.objects.create(
-        user=user,
-        company=company,
-        existing_employees = json_data.get("Existing Employees", ""),
-        alumni = json_data.get("Alumni", ""),
-        targeted_talent = json_data.get("Targeted Talent", ""),
-        leadership = json_data.get("Leadership", ""),
-        recruiters = json_data.get("Recruiters", ""),
-        clients = json_data.get("Clients", ""),
-        offer_drops = json_data.get("Offer Drops", ""),
-        exit_interview_feedback = json_data.get("Exit Interview Feedback Summary", ""),
-        employee_feedback_summary = json_data.get("Employee Feedback Summary", ""),
-        engagement_survey_results = json_data.get("Engagement Survey Result Summary", ""),
-        online_forums_mentions = json_data.get("Online Forums Mentions", ""),
-    )
+    return json_data
 
 def get_talent_insights_from_chatgpt(user, company, all_talent_dataset):
     embeddings = create_embeddings()

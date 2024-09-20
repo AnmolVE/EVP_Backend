@@ -88,7 +88,7 @@ def get_data_from_bing(company_name, fields_to_query_with_bing):
 
             crawl_data = response.json()
 
-            if(query_field == "Company Financials"):
+            if(query_field == "Headquarters", "Established Date", "About the company", "Industry", "Company History", "Company Financials"):
                 relevant_info_from_query = crawl_data.get("webPages", {}).get("value", [])
                 snippet_data = extract_snippet_data(relevant_info_from_query, 5)
                 data_from_chatgpt_2 = get_data_from_chatgpt_2(company_name, snippet_data, query_params)
