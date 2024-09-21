@@ -748,6 +748,108 @@ swot_analysis_query = {
 """
 }
 
+def get_analysis_data_from_vector_chatgpt(company, user):
+    attributes_of_great_place_vector = AttributesOfGreatPlace.objects.get(user=user, company=company)
+    attributes_of_great_place_vector_serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_place_vector)
+
+    key_themes_vector = KeyThemes.objects.get(user=user, company=company)
+    key_themes_vector_serializer = KeyThemesSerializer(key_themes_vector)
+
+    audience_wise_messaging_vector = AudienceWiseMessaging.objects.get(user=user, company=company)
+    audience_wise_messaging_vector_serializer = AudienceWiseMessagingSerializer(audience_wise_messaging_vector)
+
+    whole_data = {
+        "attributes_of_great_place_vector": attributes_of_great_place_vector_serializer.data,
+        "key_themes_vector": key_themes_vector_serializer.data,
+        "audience_wise_messaging_vector": audience_wise_messaging_vector_serializer.data,
+    }
+
+    formatted_string = json.dumps(whole_data)
+    print(len(formatted_string))
+
+    json_data = {}
+    for key, query in swot_analysis_query.items():
+        prompt = f"""
+                I want to fetch the information from the given data.
+                First analyze the complete data below
+                data : {formatted_string}
+
+                Now fetch the below information from the data and give me 5 points on this.
+                {query} and returns the response. 
+
+                **Note :** Fetch the complete information from the given data only and don't include anything extra.
+                Don't add anything which you don't find in the given data just give the information which is available in the given data.
+        """
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages = [
+                {"role": "system", "content": f"You are an expert Research Analyst."},
+                {"role": "user", "content": prompt}
+            ],
+        temperature=0.7,
+        max_tokens=4000,
+        )
+        response = completion.choices[0].message.content
+        json_data[key] = response
+
+    return json_data
+
+def get_alignment_data_from_vector_database(company, user, design_principles):
+    attributes_of_great_place_vector = AttributesOfGreatPlace.objects.get(user=user, company=company)
+    attributes_of_great_place_vector_serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_place_vector)
+
+    key_themes_vector = KeyThemes.objects.get(user=user, company=company)
+    key_themes_vector_serializer = KeyThemesSerializer(key_themes_vector)
+
+    audience_wise_messaging_vector = AudienceWiseMessaging.objects.get(user=user, company=company)
+    audience_wise_messaging_vector_serializer = AudienceWiseMessagingSerializer(audience_wise_messaging_vector)
+
+    whole_data = {
+        "attributes_of_great_place_vector": attributes_of_great_place_vector_serializer.data,
+        "key_themes_vector": key_themes_vector_serializer.data,
+        "audience_wise_messaging_vector": audience_wise_messaging_vector_serializer.data,
+    }
+
+    formatted_string = json.dumps(whole_data)
+    print(len(formatted_string))
+
+    json_data = {}
+    prompt = f"""First analyze both datasets below:
+
+        Review the primary research available in entire Dataset 1 (both sections 'whats working well' and whats not working well).
+        **Dataset 1** : {formatted_string}
+
+        **what we want to be known for**: {design_principles}
+
+        -Identify and extract 5 key themes that the company wants to be known for, based on the design principles questions.
+        -Using the information available in Dataset 1,provide a detailed summary that captures both positive and negative aspects for each theme.
+
+        -Output Structure: Each summary should be divided into two sub-sections:
+            Positive Aspects: Detail what is working well for the organization. Focus on elements that employees and external reviewers consistently highlight with positivity. Provide specific insights on how these positive aspects contribute to employee satisfaction and overall organizational performance.
+            Negative Aspects: Detail what is not working well for the organization. Highlight recurring criticisms or concerns raised by employees and external reviewers. Provide specific insights on how these negative aspects impact employee satisfaction and overall organizational performance.
+
+        -Guidelines:
+            Extract information only from Dataset 1. If information is not available, state: "The information is not available."
+            Do not rely solely on exact word or phrase matches; intelligently correlate data points by focusing on the underlying meaning and context of the responses.
+
+        Arrange all points in numbers.
+    """
+
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    messages = [
+            {"role": "system", "content": f"You are an expert Research Analyst."},
+            {"role": "user", "content": prompt}
+        ],
+    temperature=0.1,
+    max_tokens=4000,
+    )
+    response = completion.choices[0].message.content
+    json_data["what we want to be known for"] = response
+
+    return json_data
+
 def get_dissect_data_from_vector_database(company_name, user, design_principles):
     company = Company.objects.get(user=user, name=company_name)
     company_id = company.id

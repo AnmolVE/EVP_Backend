@@ -18,7 +18,6 @@ urlpatterns = [
     path("chatbot/", ChatBotAPIView.as_view(), name="search"),
     
     path("search/", SearchWebsiteView.as_view(), name="search"),
-    path("dissect/", DissectAPIView.as_view(), name="dissect"),
     path("design/", DesignAPIView.as_view(), name="design"),
     path("themes-regenerate/", Top4ThemesRegenerateAPIView.as_view(), name="themes-regenerate"),
     path("send-mail/", SendMailAPIView.as_view(), name="send-mail"),
@@ -40,7 +39,9 @@ urlpatterns = [
     path("audience-wise-messaging/", AudienceWiseMessagingAPIView.as_view(), name='audience-wise-messaging'),
     path("audience-wise-messaging/<str:company_name>/", AudienceWiseMessagingSpecificAPIView.as_view(), name='audience-wise-messaging-specific'),
     path("talent-insights/", TalentInsightsAPIView.as_view(), name="talent-insights"),
+    path("swot-analysis/", SwotAnalysisAPIView.as_view(), name='swot-analysis'),
     path("swot-analysis/<str:company_name>/", SwotAnalysisSpecificAPIView.as_view(), name='swot-analysis-specific'),
+    path("alignment/", AlignmentAPIView.as_view(), name='alignment'),
     path("alignment/<str:company_name>/", AlignmentSpecificAPIView.as_view(), name='alignment-specific'),
     path("messaging-hierarchy/<str:company_name>/", MessagingHierarchySpecificAPIView.as_view(), name='messaging-hierarchy'),
     path("tagline/", TaglineAPIView.as_view(), name='tagline'),

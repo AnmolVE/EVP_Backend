@@ -58,22 +58,26 @@ def get_data_from_chatgpt_1(company_name, fields_to_query_with_chatgpt_1):
     print("data : ", json_response)
     return json_response
 
-def get_data_from_chatgpt_2(company_name, snippet_data, query_params):
+def get_data_from_chatgpt_2(snippet_data, query_params):
 
     prompt = f"""
-        Information: {snippet_data} \n \n Question: {query_params}.
+        First analyze the given information below:
+
+        Given Information: {snippet_data}
+
+        After completely analyzing the given information, fetch the result for the below query from the given information only.
+        
+        Query: {query_params}.
+
+        And don't create any heading just give the response as a paragraph.
         """
-    print(prompt)
 
     completion = chat_client.chat.completions.create(
     model=AZURE_OPENAI_DEPLOYMENT,
     messages = [
         {
             "role":"system",
-            "content":"""You are a helpful expert research assistant. Your users are asking questions about information contained in the given data.
-                            You will be shown the user's question, and the relevant information from the data.
-                            After analyzing the complete information, your task is to answer the user's question using only this information.
-                            IF YOU DON'T FIND THE ANSWER IN THE GIVEN INFORMATION PLEASE SAY -- "Not found".
+            "content":"""You are a helpful expert research Analyst.
                         """
         },
         {

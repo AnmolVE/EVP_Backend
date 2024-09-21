@@ -53,6 +53,8 @@ from .utils.langchaining import (
     get_key_themes_from_chatgpt,
     get_audience_wise_messaging_from_chatgpt,
     get_talent_insights_from_chatgpt,
+    get_analysis_data_from_vector_chatgpt,
+    get_alignment_data_from_vector_database,
     get_dissect_data_from_vector_database,
     get_design_data_from_database, get_tagline,
     get_regenerated_theme,
@@ -439,7 +441,7 @@ class SearchWebsiteView(APIView):
 
             # final_data.update(data_from_chatgpt_1)
 
-        saved_data_in_database_in_string = save_data_to_database(final_data, company_name, user)
+        # saved_data_in_database_in_string = save_data_to_database(final_data, company_name, user)
         
         # with open(r"media\pgData.txt", "w") as file:
         #     file.write(saved_data_in_database_in_string)
@@ -448,39 +450,6 @@ class SearchWebsiteView(APIView):
 
         # return Response(data_from_langchain)
         return Response(final_data)
-    
-class DissectAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        company_name = request.data.get('company_name')
-        if not company_name:
-            return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            company = Company.objects.get(user=user, name=company_name)
-        except Company.DoesNotExist:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        company_id = company.id
-
-        if (SwotAnalysis.objects.filter(user=user, company=company_id).exists() and 
-                Alignment.objects.filter(user=user, company=company_id).exists()):
-            return Response("Instance already created", status=status.HTTP_200_OK)
-        
-        try:
-            design_principles_instance = DesignPrinciples.objects.get(user=user, company=company)
-            design_principles = DesignPrinciplesSerializer(design_principles_instance)
-        except DesignPrinciples.DoesNotExist:
-            return Response({'error': 'Design Principles not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        try:
-            dissect_data_from_vector_database = get_dissect_data_from_vector_database(company_name, user, design_principles)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(dissect_data_from_vector_database, status=status.HTTP_200_OK)
     
 class DesignAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1247,23 +1216,44 @@ class TalentInsightsAPIView(APIView):
 
         return Response(talent_insights_from_chatgpt, status=status.HTTP_200_OK)
 
-class SwotAnalysisSpecificAPIView(APIView):
+class SwotAnalysisAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, company_name):
+    def post(self, request):
         user = request.user
+        company_name = request.data.get("company_name")
+
+        if not company_name:
+            return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
-            return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        swot_analysis = SwotAnalysis.objects.filter(user=user, company=company).first()
+
+        if swot_analysis:
+            serializer = SwotAnalysisSerializer(swot_analysis)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
         try:
-            swot_analysis = SwotAnalysis.objects.get(user=user, company=company)
-        except SwotAnalysis.DoesNotExist:
-            return Response({'error': 'Swot Analysis does not exist'}, status=status.HTTP_404_NOT_FOUND)
-
+            analysis_data_from_vector_chatgpt = get_analysis_data_from_vector_chatgpt(company, user)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        swot_analysis = SwotAnalysis.objects.create(
+            user=user,
+            company=company,
+            what_is_working_well_for_the_organization = analysis_data_from_vector_chatgpt.get("what_is_working_well_for_the_organization", ""),
+            what_is_not_working_well_for_the_organization = analysis_data_from_vector_chatgpt.get("what_is_not_working_well_for_the_organization", ""),
+        )
+        
         serializer = SwotAnalysisSerializer(swot_analysis)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class SwotAnalysisSpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     
     def patch(self, request, company_name):
         data = request.data
@@ -1284,24 +1274,50 @@ class SwotAnalysisSpecificAPIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class AlignmentSpecificAPIView(APIView):
+
+class AlignmentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, company_name):
+    def post(self, request):
         user = request.user
+        company_name = request.data.get('company_name')
+        if not company_name:
+            return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
-            return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        alignment =  Alignment.objects.filter(user=user, company=company).first()
+
+        if alignment:
+            serializer = AlignmentSerializer(alignment)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
         try:
-            alignment = Alignment.objects.get(user=user, company=company)
-        except Alignment.DoesNotExist:
-            return Response({'error': 'Alignment does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            design_principles_instance = DesignPrinciples.objects.get(user=user, company=company)
+            serializer = DesignPrinciplesSerializer(design_principles_instance)
+            design_principles = serializer.data
+        except DesignPrinciples.DoesNotExist:
+            return Response({'error': 'Design Principles not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            alignment_data_from_vector_database = get_alignment_data_from_vector_database(company, user, design_principles)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        alignment = Alignment.objects.create(
+            user=user,
+            company=company,
+            what_we_want_to_be_known_for = alignment_data_from_vector_database.get("what we want to be known for", "")
+        )
 
         serializer = AlignmentSerializer(alignment)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class AlignmentSpecificAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     
     def patch(self, request, company_name):
         data = request.data
