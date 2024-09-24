@@ -49,13 +49,13 @@ from .utils.langchaining import (
     create_embeddings,
     query_with_langchain,
     save_pgData_to_vector_database,
+    save_data_to_vector_database,
     get_attributes_of_great_place_from_chatgpt,
     get_key_themes_from_chatgpt,
     get_audience_wise_messaging_from_chatgpt,
     get_talent_insights_from_chatgpt,
     get_analysis_data_from_vector_chatgpt,
     get_alignment_data_from_vector_database,
-    get_dissect_data_from_vector_database,
     get_design_data_from_database, get_tagline,
     get_regenerated_theme,
     get_creative_direction_from_chatgpt,
@@ -441,7 +441,7 @@ class SearchWebsiteView(APIView):
 
             # final_data.update(data_from_chatgpt_1)
 
-        # saved_data_in_database_in_string = save_data_to_database(final_data, company_name, user)
+        saved_data_in_database_in_string = save_data_to_database(final_data, company_name, user)
         
         # with open(r"media\pgData.txt", "w") as file:
         #     file.write(saved_data_in_database_in_string)
@@ -767,6 +767,8 @@ class CompanySpecificAPIView(APIView):
         serializer = CompanySerializer(company, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            data_to_save = serializer.data
+            save_data_to_vector_database(data_to_save, r"media\pgData.txt", company_name)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -1035,7 +1037,7 @@ class AttributesOfGreatPlaceAPIView(APIView):
             serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_place)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        attributes_of_great_place_from_chatgpt = get_attributes_of_great_place_from_chatgpt(company, company_name, user)
+        attributes_of_great_place_from_chatgpt = get_attributes_of_great_place_from_chatgpt(company_name)
         
         attributes_of_great_workplace = AttributesOfGreatPlace.objects.create(
             user=user,
@@ -1095,7 +1097,7 @@ class KeyThemesAPIView(APIView):
             serializer = KeyThemesSerializer(key_themes)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        key_themes_from_chatgpt = get_key_themes_from_chatgpt(company, company_name, user)
+        key_themes_from_chatgpt = get_key_themes_from_chatgpt(company_name)
         
         key_themes = KeyThemes.objects.create(
             user=user,
@@ -1146,7 +1148,7 @@ class AudienceWiseMessagingAPIView(APIView):
             serializer = AudienceWiseMessagingSerializer(audience_wise_messaging)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        audience_wise_messaging_from_chatgpt = get_audience_wise_messaging_from_chatgpt(company, company_name, user)
+        audience_wise_messaging_from_chatgpt = get_audience_wise_messaging_from_chatgpt(company_name)
         
         audience_wise_messaging = AudienceWiseMessaging.objects.create(
             user=user,
@@ -1195,6 +1197,9 @@ class TalentInsightsAPIView(APIView):
     def post(self, request):
         user=request.user
         company_name = request.data.get("company_name")
+        if not company_name:
+            return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
@@ -1202,19 +1207,29 @@ class TalentInsightsAPIView(APIView):
         
         talent_dataset = TalentDataset.objects.filter(user=user, company=company)
 
-        if not talent_dataset.exists():
-            return Response({"error": "Talent Dataset does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        
-        if all(dataset.key_motivators for dataset in talent_dataset):
-            serializer = TalentInsightsSerializer(talent_dataset, many=True)
+        if talent_dataset.exists():
+            serializer = TalentDatasetSerializer(talent_dataset, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        serializer = TalentInsightsSerializer(talent_dataset, many=True)
-        all_talent_dataset = serializer.data
 
-        talent_insights_from_chatgpt = get_talent_insights_from_chatgpt(user, company, all_talent_dataset)
+        talent_insights_from_chatgpt = get_talent_insights_from_chatgpt(company_name)
 
-        return Response(talent_insights_from_chatgpt, status=status.HTTP_200_OK)
+        talent_datasets_to_create = [
+            TalentDataset(
+                user=user,
+                company=company,
+                area=dataset["area"],
+                role=dataset["role"],
+                location=dataset["location"],
+                seniority=dataset["seniority"],
+                key_motivators=dataset["key_motivators"],
+            ) for dataset in talent_insights_from_chatgpt
+        ]
+        TalentDataset.objects.bulk_create(talent_datasets_to_create)
+
+        talent_insights = TalentDataset.objects.filter(user=user, company=company)
+        serializer = TalentDatasetSerializer(talent_insights, many=True)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class SwotAnalysisAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1507,7 +1522,6 @@ class EVPDefinitionAPIView(APIView):
 
         return Response(evp_definition_from_chatgpt)
 
-    
 class EVPPromiseAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1913,7 +1927,6 @@ class EVPStatementAndPillarsSpecificAPIView(APIView):
         serializer = EVPStatementAndPillarsSerializer(evp_statement)
         return Response(serializer.data)
 
-    
 class EVPExecutionPlanSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1952,7 +1965,6 @@ class EVPExecutionPlanSpecificAPIView(APIView):
     
 
 # *******************Module 2 - Internal Communication***********************
-
 
 
 class ICICSIAPIView(APIView):

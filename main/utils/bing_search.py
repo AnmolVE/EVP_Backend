@@ -32,28 +32,26 @@ from ..utils.chatgpt import get_data_from_chatgpt_2
 
 bing_query_data = {
         "headquarters":"{company} Headquarters",
-        "founded_date":"{company} founded date",
+        "established_date":"{company} founded date",
         "about_the_company":"About {company}",
         "industry":"Industry of {company}",
-        "financials":"Financials of {company}",
-        "history":"History of {company}",
-        "competitors":"{company} competitors",
+        "company_financials":"Financials of {company}",
+        "company_history":"History of {company}",
+        "top_3_competitors":"{company} competitors",
         "number_of_employees":"Number of Employees at {company}",
         "number_of_geographies":"Number of Geographies {company} operates in",
-        "linkedin_url_and_followers":"LinkedIn URL and followers for {company}",
-        "instagram_url_and_followers":"Instagram URL and followers for {company}",
-        "tiktok_url_and_followers":"Tiktok URL and followers for {company}",
-        "facebook_url_and_followers":"Facebook URL and followers for {company}",
-        "twitter_url_and_followers":"Twitter(X) URL and followers for {company}",
+        "linked_info":"LinkedIn URL and followers for {company}",
+        "instagram_info":"Instagram URL and followers for {company}",
+        "facebook_info":"Facebook URL and followers for {company}",
+        "twitter_info":"Twitter(X) URL and followers for {company}",
         "glassdoor_score":"Glassdoor Score of {company}",
-        "online_forums_summary":"Online Forums Summary about {company}",
-        "number_of_media_mentions":"Number of Media Mentions of {company}",
-        "number_of_awards":"Number of Awards {company} has won",
         "employee_value_proposition":"{company} Employee Value Proposition",
         "culture_and_values":"{company} Culture and Values",
+        "customer_value_proposition": "{company} Customer Value Proposition",
         "purpose":"Purpose of {company}",
         "vision":"Vision of {company}",
         "mission":"Mission of {company}",
+        "brand_guidelines":"Brand Guidelines of {company}"
 }
 
 def extract_snippet_data(relevant_info_from_query, number_of_iteration):
@@ -94,7 +92,7 @@ def get_data_from_bing(company_name, fields_to_query_with_bing):
                 snippet_data = extract_snippet_data(relevant_info_from_query, 3)
                 url = crawl_data.get("webPages", {}).get("value", [])[0]["url"]
                 snippet_data += f" The url is : {url}"
-                data_from_chatgpt_2 = get_data_from_chatgpt_2(snippet_data, query_params)
+                data_from_chatgpt_2 = get_data_from_chatgpt_2(snippet_data, field)
                 cleaned_result = re.sub(r'\\', '', data_from_chatgpt_2)
                 cleaned_result = re.sub(r'\n', '', cleaned_result)
                 cleaned_result = cleaned_result.strip('"')
@@ -102,7 +100,7 @@ def get_data_from_bing(company_name, fields_to_query_with_bing):
             else:
                 relevant_info_from_query = crawl_data.get("webPages", {}).get("value", [])
                 snippet_data = extract_snippet_data(relevant_info_from_query, 9)
-                data_from_chatgpt_2 = get_data_from_chatgpt_2(snippet_data, query_params)
+                data_from_chatgpt_2 = get_data_from_chatgpt_2(snippet_data, field)
                 cleaned_result = re.sub(r'\\', '', data_from_chatgpt_2)
                 cleaned_result = re.sub(r'\n', '', cleaned_result)
                 cleaned_result = cleaned_result.strip('"')
@@ -126,30 +124,26 @@ def save_data_to_database(final_data, company_name, user):
             user=user,
             name=company_name,
             headquarters=final_data.get('headquarters', ''),
-            established_date=final_data.get('founded_date', ''),
+            established_date=final_data.get('established_date', ''),
             about_the_company=final_data.get('about_the_company', ''),
             industry=final_data.get('industry', ''),
-            company_financials=final_data.get('financials', ''),
-            company_history=final_data.get('history', ''),
-            top_3_competitors=final_data.get('competitors', ''),
+            company_financials=final_data.get('company_financials', ''),
+            company_history=final_data.get('company_history', ''),
+            top_3_competitors=final_data.get('top_3_competitors', ''),
             number_of_employees = final_data.get('number_of_employees', ''),
             number_of_geographies = final_data.get('number_of_geographies', ''),
-            linked_info=final_data.get('linkedin_url_and_followers', ''),
-            instagram_info=final_data.get('instagram_url_and_followers', ''),
-            tiktok_info=final_data.get('tiktok_url_and_followers', ''),
-            facebook_info=final_data.get('facebook_url_and_followers', ''),
-            twitter_info=final_data.get('twitter_url_and_followers', ''),
-            internal_comms_channels=final_data.get('Internal Comms Channels', ''),
+            linked_info=final_data.get('linked_info', ''),
+            instagram_info=final_data.get('instagram_info', ''),
+            facebook_info=final_data.get('facebook_info', ''),
+            twitter_info=final_data.get('twitter_info', ''),
             glassdoor_score=final_data.get('glassdoor_score', ''),
-            what_retains_talent=final_data.get('What Retains Talent', ''),
-            what_attracts_talent=final_data.get('What Attracts Talent', ''),
             employee_value_proposition=final_data.get('employee_value_proposition', ''),
             culture_and_values=final_data.get('culture_and_values', ''),
+            customer_value_proposition=final_data.get('customer_value_proposition', ''),
             purpose=final_data.get('purpose', ''),
-            customer_value_proposition=final_data.get('Customer Value Proposition', ''),
             vision=final_data.get('vision', ''),
             mission=final_data.get('mission', ''),
-            brand_guidelines=final_data.get('Brand Guidelines', ''),
+            brand_guidelines=final_data.get('brand_guidelines', ''),
         )
 
     company_vector = Company.objects.get(user=user, name=company_name)

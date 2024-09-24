@@ -58,7 +58,87 @@ def get_data_from_chatgpt_1(company_name, fields_to_query_with_chatgpt_1):
     print("data : ", json_response)
     return json_response
 
-def get_data_from_chatgpt_2(snippet_data, query_params):
+query_for_chatgpt_2 = {
+"headquarters": """
+    Search for the primary location of the company's headquarters.
+    The response should appear as city name, country name.
+""",
+"established_date": """
+    Find the date or year the company was found or established.
+    The response should only be appear in yyyy format.
+""",
+"about_the_company": """
+    Create a summary which gives the description about the company.
+    Focus on how the company describes itself.
+""",
+"industry": """
+    Identify the industry or sector the company operates in.
+    Specify the primary market or sector the company is associated with.
+""",
+"company_financials": """
+    Locate financial information about the company.
+""",
+"company_history": """
+    Provide a detailed overview of company's history, focusing on its founding, major milestones, key product developments, and significant shifts in strategy or market presence.
+""",
+"top_3_competitors": """
+    Find the top three competitors of the company. Use keywords like 'main competitors,' 'industry competitors,' or 'competitive landscape.'
+    Identify and list the top three companies competing with the organization.
+""",
+"number_of_employees": """
+    Search for the total number of employees in the company.
+    Response should only contain the number of employees. No other words or statements. Numeric response only.
+""",
+"number_of_geographies": """
+    Identify the number of geographical locations where the company has operations.
+    Response should only list the geographies and not have any additional words.
+""",
+"linked_info": """
+    Search for information on the company's LinkedIn profile.
+    Use keywords like 'LinkedIn profile,' 'LinkedIn company page,' or 'LinkedIn followers.' Provide the URL, follower count, and a summary of the company's activity on LinkedIn. Include the frequency of posts, the average number of likes per post, and the average number of comments per post.
+""",
+"instagram_info": """
+    Find information on the company's Instagram profile.
+    Use keywords like 'Instagram profile,' 'Instagram company page,' or 'Instagram followers.' Provide the URL, follower count, and a summary of the company's activity on Instagram.
+""",
+"facebook_info": """
+    Locate information on the company's Facebook page.
+    Use keywords like 'Facebook profile,' 'Facebook page,' or 'Facebook followers.' Provide the URL, follower count, and a summary of the company's activity on Facebook.
+""",
+"twitter_info": """
+    Find information on the company's (X)  Twitter profile.
+    Use keywords like 'Twitter profile,' 'Twitter page,' or 'Twitter followers.' Provide the URL, follower count, and a summary of the company's activity on Twitter.
+""",
+"glassdoor_score": """
+    Locate the company's Glassdoor score. Use terms like 'Glassdoor score,' 'Glassdoor rating,' or 'employee reviews score.' Provide the current rating and a summary of  how many reviews are being considered.
+    Do not summarize the actual reviews.
+""",
+"employee_value_proposition": """
+    Find if there is an existing Employee Value Proposition (EVP) and paste the actual statement here.
+""",
+"culture_and_values": """
+    Locate the culture and or values of the company.
+""",
+"customer_value_proposition": """
+    Locate the tagline / CVP of the company.
+""",
+"purpose": """
+    Locate the purpose of the company.
+""",
+"vision": """
+    Locate the vision statement of the company.
+""",
+"mission": """
+    Locate the mission statement of the company.
+""",
+"brand_guidelines": """
+    Locate the colors, imagery guidelines, logo guidelines.
+""",
+}
+
+def get_data_from_chatgpt_2(snippet_data, field):
+
+    query = query_for_chatgpt_2.get(field)
 
     prompt = f"""
         First analyze the given information below:
@@ -67,7 +147,7 @@ def get_data_from_chatgpt_2(snippet_data, query_params):
 
         After completely analyzing the given information, fetch the result for the below query from the given information only.
         
-        Query: {query_params}.
+        Query: {query}.
 
         And don't create any heading just give the response as a paragraph.
         """

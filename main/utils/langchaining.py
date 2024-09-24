@@ -115,84 +115,72 @@ def save_documents_to_master_vector_database():
     return "Documents stored successfully!!!"
 
 langchain_query = {
-"Headquarters": """
+"headquarters": """
         Search for the primary location of the company's headquarters. Look for terms like 'head office,' 'corporate office,' or 'main office location.' Identify the city, state, and country where the company's headquarters is located.
         The response should appear as city name, country name.
 """,
-"Established Date": """
+"established_date": """
         Find the date or year the company was established. Look for phrases like 'founded in,' 'established in,' or 'incorporated on.' Identify the specific year or date of the company's founding.
         The response should only be appear in yyyy format.
 """,
-"About the company": """
+"about_the_company": """
         Create a summary which gives the description about the company. Focus on how the company describes itself. Examples include "professional services firm" or "automobile company" or "global consulting company". Include a line on their product or services. Include a line on their clientele. 
 """,
-"Industry": """
+"industry": """
         Identify the industry or sector the company operates in. Use terms like 'industry sector,' 'business sector,' or 'industry classification.' Specify the primary market or sector the company is associated with.
 """,
-"Company Financials": """
+"company_financials": """
         Locate financial information about the company. Search for terms like 'financial performance,' 'company revenue,' 'annual report,' or 'financial statement.' Provide data on the company's revenue, profits, and overall financial health.
 """,
-"Company History": """
+"company_history": """
                 Provide a detailed overview of company's history, focusing on its founding, major milestones, key product developments, and significant shifts in strategy or market presence. Include information on the evolution of its leadership, notable acquisitions or mergers, and any major challenges or controversies it has faced. Summarize how these events have shaped the company's current status in its industry.
 """,
-"Top 3 Competitors": """
+"top_3_competitors": """
                 Find the top three competitors of the company. Use keywords like 'main competitors,' 'industry competitors,' or 'competitive landscape.' Identify and list the top three companies competing with the organization.
 """,
-"Number of Employees": """
+"number_of_employees": """
                 Search for the total number of employees in the company. Use terms like 'employee count,' 'number of employees,' or 'company workforce.' Provide the latest available employee count.
                 Response should only contain the number of employees. No other words or statements. Numeric response only.
 """,
-"Number of Geographies": """
+"number_of_geographies": """
                 Identify the number of geographical locations where the company has operations. Search for phrases like 'number of locations,' 'geographical presence,' or 'global footprint.' List the distinct regions or countries where the company is active.
                 Response should only list the geographies and not have any additional words.
 """,
-"LinkedIn URL and followers": """
+"linked_info": """
                 Search for information on the company's LinkedIn profile. Use keywords like 'LinkedIn profile,' 'LinkedIn company page,' or 'LinkedIn followers.' Provide the URL, follower count, and a summary of the company's activity on LinkedIn. Include the frequency of posts, the average number of likes per post, and the average number of comments per post.
 """,
-"Instagram URL and followers": """
+"instagram_info": """
                 Find information on the company's Instagram profile. Use keywords like 'Instagram profile,' 'Instagram company page,' or 'Instagram followers.' Provide the URL, follower count, and a summary of the company's activity on Instagram.
 """,
-"Tiktok URL and followers": """
-                Search for information on the company's TikTok profile. Use terms like 'TikTok profile,' 'TikTok company page,' or 'TikTok followers.' Provide the URL, follower count, and a summary of the company's activity on TikTok.
-""",
-"Facebook URL and followers": """
+"facebook_info": """
                 Locate information on the company's Facebook page. Use keywords like 'Facebook profile,' 'Facebook page,' or 'Facebook followers.' Provide the URL, follower count, and a summary of the company's activity on Facebook.
 """,
-"Twitter(X) URL and followers": """
+"twitter_info": """
                 Find information on the company's (X)  Twitter profile. Use keywords like 'Twitter profile,' 'Twitter page,' or 'Twitter followers.' Provide the URL, follower count, and a summary of the company's activity on Twitter.
 """,
-"Internal Comms Channels": """
-                Intranet, emails, newsletter, townhalls, collaboration platform like Teams / Slack
-""",
-"Glassdorr Score": """
+"glassdoor_score": """
                 Locate the company's Glassdoor score. Use terms like 'Glassdoor score,' 'Glassdoor rating,' or 'employee reviews score.' Provide the current rating and a summary of  how many reviews are being considered. Do not summarize the actual reviews.
 """,
-"What Retains Talent": """
-                Identify the top three reasons why talent tends to stay with the company. Search the document for key phrases such as 'What Retains Talent,' 'Why Talent Chooses Us,' or similar terms. Summarize the common themes and specific factors that contribute to employee retention, highlighting any notable policies, benefits, or cultural aspects that are frequently mentioned.
+"employee_value_proposition": """
+                Find if there is an existing Employee Value Proposition (EVP) and paste the actual statement here.
 """,
-"What Attracts Talent": """
-                Identify the key factors that attract talent to the company. Use keywords like 'talent attraction,' 'reasons to join,' or 'employment appeal.' Summarize the main attributes that make the company appealing to potential employees.
+"culture_and_values": """
+                Locate the culture and or values of the company.
 """,
-"Employee Value Proposition": """
-                Find if there is an existing Employee Value Proposition (EVP)and paste the actual statement here
+"customer_value_proposition": """
+                Locate the tagline / CVP of the company.te
 """,
-"Culture and Values": """
-                Locate the culture and or values of the company from the secondary research section and paste here for user to validate
+"purpose": """
+                Locate the purpose of the company.
 """,
-"Purpose": """
-                Locate the purpose of the company from the secondary research section and paste here for user to validate
+"vision": """
+                Locate the vision statement of the company.
 """,
-"Customer Value Proposition": """
-                Locate the tagline / CVP of the company from the secondary research section and paste it as is for user to validate
+"mission": """
+                Locate the mission statement of the company.
 """,
-"Vision": """
-                Locate the vision statement of the company from the secondary research section and paste here for user to validate
-""",
-"Mission": """
-                Locate the mission statement of the company from the secondary research section and paste here for user to validate
-""",
-"Brand Guidelines": """
-                Locate the colors, imagery guidelines, logo guidelines
+"brand_guidelines": """
+                Locate the colors, imagery guidelines, logo guidelines.
 """
 }
 
@@ -309,6 +297,44 @@ def save_pgData_to_vector_database(file_path, company_name):
 
         return "Data added successfully in the vector database"
     return "Some error occured"
+
+def save_data_to_vector_database(data_to_save, file_path, company_name):
+    data = [str(value) for key, value in data_to_save.items() if key not in ["id", "user"]]
+
+    string_data = "\n\n".join(data)
+
+    with open(file_path, "w") as file:
+        file.write(string_data)
+
+    loader = TextLoader(file_path)
+    document_data = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
+    text_chunks = text_splitter.split_documents(document_data)
+    documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
+    ids=[f"id{i}" for i in range(len(documents))]
+
+    embeddings = create_embeddings()
+
+    sanitized_company_name = re.sub(r'\s+', '_', company_name)
+    persistent_directory = f"vector_databases/{sanitized_company_name}"
+    client = chromadb.PersistentClient(path=persistent_directory)
+    if os.path.exists(os.path.join(persistent_directory)):
+        collection = client.get_or_create_collection(
+            name="test",
+            embedding_function=embeddings,
+            metadata={"hnsw:space": "cosine"},
+        )
+
+        current_count = collection.count()
+        ids = [f"id{current_count + i}" for i in range(len(documents))]
+        embedded_documents = embeddings([documents[i] for i in range(len(documents))])
+
+        collection.add(
+            embeddings=embedded_documents,
+            documents=documents,
+            ids=ids,
+        )
 
 def get_talent_dataset_from_chatgpt(company_name, user):
     company = Company.objects.get(user=user, name=company_name)
@@ -443,7 +469,7 @@ attributes_of_great_place_query = {
 """
 }
 
-def get_attributes_of_great_place_from_chatgpt(company, company_name, user):
+def get_attributes_of_great_place_from_chatgpt(company_name):
     embeddings = create_embeddings()
     sanitized_company_name = re.sub(r'\s+', '_', company_name)
     persistent_directory = f"vector_databases/{sanitized_company_name}"
@@ -504,7 +530,7 @@ key_themes_query = {
 """
 }
 
-def get_key_themes_from_chatgpt(company, company_name, user):
+def get_key_themes_from_chatgpt(company_name):
     embeddings = create_embeddings()
     sanitized_company_name = re.sub(r'\s+', '_', company_name)
     persistent_directory = f"vector_databases/{sanitized_company_name}"
@@ -602,7 +628,7 @@ audience_wise_messaging_query = {
 """
 }
 
-def get_audience_wise_messaging_from_chatgpt(company, company_name, user):
+def get_audience_wise_messaging_from_chatgpt(company_name):
     embeddings = create_embeddings()
     sanitized_company_name = re.sub(r'\s+', '_', company_name)
     persistent_directory = f"vector_databases/{sanitized_company_name}"
@@ -657,8 +683,91 @@ def get_audience_wise_messaging_from_chatgpt(company, company_name, user):
         json_data[key] = chat_response
     return json_data
 
-def get_talent_insights_from_chatgpt(user, company, all_talent_dataset):
+def get_talent_insights_from_chatgpt(company_name):
     embeddings = create_embeddings()
+
+    sanitized_company_name = re.sub(r'\s+', '_', company_name)
+    client = chromadb.PersistentClient(path=f"vector_databases/{sanitized_company_name}")
+
+    collection = client.get_or_create_collection(
+        name="test",
+        embedding_function=embeddings,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+    query = """
+            Look for documents with titles like Job Description or Job Openings as well as the company's careers website and any presence on job websites including indeed.com, seek.com, LinkedIn jobs.
+    """
+    query_results = collection.query(
+                query_texts=[query],
+                n_results=40,
+            )
+    fetched_documents = " ".join(query_results["documents"][0])
+
+    RESPONSE_JSON = {
+        "talent_dataset": [
+            {
+                "id": "1",
+                "area": "value",
+                "role": "value",
+                "location": "value",
+                "seniority": "value"
+            },
+            {
+                "id": "2",
+                "area": "value",
+                "role": "value",
+                "location": "value",
+                "seniority": "value"
+            }
+        ]
+    }
+
+    talent_dataset = {}
+
+    prompt = f"""First analyze the given Dataset given below and return the response in json format.
+
+        Dataset: {fetched_documents}.
+
+        Now from the given Dataset, fetch the complete information about :
+
+        - Search for the type of area that is being advertised. Examples: Technology, HR, Admin, Legal, Sales etc.
+        - Search for the designation/role or the position  that is being advertised. Examples: Software Developer, Sales Manager, etc.
+        - Search for the location where the role is based. Examples: India, Manila - Philippines, Europe, North America, etc.
+        - Search for the seniority or level of the role. Examples: Entry, Mid, Senior, Executive, Director etc.
+
+        I have added examples just for your reference don't take the examples for granted and fetch the actual information in the given data.
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Replace the value with the actual information.
+
+        **Important : ** Area, Location and Seniority can be repeated but role cannot repeat.
+        """
+    
+    completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are a helpful expert research assistant.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0.3,
+        max_tokens=2000,
+        )
+    chat_response = completion.choices[0].message.content
+    try:
+        talent_dataset = json.loads(chat_response)
+        talent_dataset = talent_dataset["talent_dataset"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        talent_dataset = {}
 
     client = chromadb.PersistentClient(path="vector_databases/MasterVectorDatabase")
 
@@ -680,8 +789,10 @@ def get_talent_insights_from_chatgpt(user, company, all_talent_dataset):
     print(len(fetched_documents))
 
     RESPONSE_JSON = {
-        "talent_insights": all_talent_dataset
+        "talent_insights": talent_dataset
     }
+
+    talent_insights = {}
 
     prompt = f"""First analyze the given Dataset given below and return the response in json format.
 
@@ -717,27 +828,13 @@ def get_talent_insights_from_chatgpt(user, company, all_talent_dataset):
         )
     chat_response = completion.choices[0].message.content
     try:
-        json_response = json.loads(chat_response)
-        json_response = json_response["talent_insights"]
+        talent_insights = json.loads(chat_response)
+        talent_insights = talent_insights["talent_insights"]
     except json.JSONDecodeError as e:
         print(f"Failed to parse JSON response: {e}")
-        json_response = {}
-    
-    for insight in json_response:
-        insight_id = insight.get("id")
-        key_motivators = insight.get("key_motivators")
+        talent_insights = {}
 
-        if insight_id and key_motivators:
-            try:
-                talent_dataset = TalentDataset.objects.get(id=insight_id)
-                talent_dataset.key_motivators = key_motivators
-                talent_dataset.save()
-            except TalentDataset.DoesNotExist:
-                pass
-
-    talent_insights = TalentDataset.objects.filter(user=user, company=company)
-    serializer = TalentInsightsSerializer(talent_insights, many=True)
-    return serializer.data
+    return talent_insights
 
 swot_analysis_query = {
 "what_is_working_well_for_the_organization": """Identify the attributes that highlight what is working well for the organization. Focus on aspects that employees and external reviewers consistently praise or express satisfaction with. Provide detailed insights on these positive aspects and how they contribute to the overall success and positive reputation of the organization.
@@ -849,106 +946,6 @@ def get_alignment_data_from_vector_database(company, user, design_principles):
     json_data["what we want to be known for"] = response
 
     return json_data
-
-def get_dissect_data_from_vector_database(company_name, user, design_principles):
-    company = Company.objects.get(user=user, name=company_name)
-    company_id = company.id
-
-    attributes_of_great_place_vector = AttributesOfGreatPlace.objects.get(user=user, company=company_id)
-    attributes_of_great_place_vector_serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_place_vector)
-
-    key_themes_vector = KeyThemes.objects.get(user=user, company=company_id)
-    key_themes_vector_serializer = KeyThemesSerializer(key_themes_vector)
-
-    audience_wise_messaging_vector = AudienceWiseMessaging.objects.get(user=user, company=company_id)
-    audience_wise_messaging_vector_serializer = AudienceWiseMessagingSerializer(audience_wise_messaging_vector)
-
-    whole_data = {
-        "attributes_of_great_place_vector": attributes_of_great_place_vector_serializer.data,
-        "key_themes_vector": key_themes_vector_serializer.data,
-        "audience_wise_messaging_vector": audience_wise_messaging_vector_serializer.data,
-    }
-
-    formatted_string = json.dumps(whole_data)
-    print(len(formatted_string))
-    
-    json_data = {}
-    for key, query in swot_analysis_query.items():
-        prompt = f"""
-                I want to fetch the information from the given data.
-                First analyze the complete data below
-                data : {formatted_string}
-
-                Now fetch the below information from the data and give me 5 points on this.
-                {query} and returns the response. 
-
-                **Note :** Fetch the complete information from the given data only and don't include anything extra.
-                Don't add anything which you don't find in the given data just give the information which is available in the given data.
-        """
-        message_text = [
-            {"role": "system", "content": f"You are an expert in fetching information from the given data and you are only allowed to fetch information from the given data."},
-            {"role": "user", "content": prompt}
-        ]
-
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = message_text,
-        temperature=0.7,
-        max_tokens=4000,
-        )
-        response = completion.choices[0].message.content
-        json_data[key] = response
-    # return json_data
-    company = Company.objects.get(user=user, name=company_name)
-    
-    swot_analysis = SwotAnalysis.objects.create(
-        user=user,
-        company=company,
-        what_is_working_well_for_the_organization = json_data.get("what_is_working_well_for_the_organization", ""),
-        what_is_not_working_well_for_the_organization = json_data.get("what_is_not_working_well_for_the_organization", ""),
-    )
-        
-    prompt = f"""First analyze both datasets below:
-
-        Review the primary research available in entire Dataset 1 (both sections 'whats working well' and whats not working well).
-        **Dataset 1** : {formatted_string}
-
-        **what we want to be known for**: {design_principles}
-
-        -Identify and extract 5 key themes that the company wants to be known for, based on the design principles questions.
-        -Using the information available in Dataset 1,provide a detailed summary that captures both positive and negative aspects for each theme.
-
-        -Output Structure: Each summary should be divided into two sub-sections:
-            Positive Aspects: Detail what is working well for the organization. Focus on elements that employees and external reviewers consistently highlight with positivity. Provide specific insights on how these positive aspects contribute to employee satisfaction and overall organizational performance.
-            Negative Aspects: Detail what is not working well for the organization. Highlight recurring criticisms or concerns raised by employees and external reviewers. Provide specific insights on how these negative aspects impact employee satisfaction and overall organizational performance.
-
-        -Guidelines:
-            Extract information only from Dataset 1. If information is not available, state: "The information is not available."
-            Do not rely solely on exact word or phrase matches; intelligently correlate data points by focusing on the underlying meaning and context of the responses.
-
-        Arrange all points in numbers.
-    """
-    message_text = [
-        {"role": "system", "content": f"You are an expert in fetching information from the given context and and you cannot look outside of the given data."},
-        {"role": "user", "content": prompt}
-    ]
-
-    completion = chat_client.chat.completions.create(
-    model=AZURE_OPENAI_DEPLOYMENT,
-    messages = message_text,
-    temperature=0.1,
-    max_tokens=4000,
-    )
-    response2 = completion.choices[0].message.content
-    json_data["what we want to be known for"] = response2
-
-    alignment = Alignment.objects.create(
-        user=user,
-        company=company,
-        what_we_want_to_be_known_for = json_data.get("what we want to be known for", "")
-    )
-    return json_data
-        
 
 def get_design_data_from_database(company_name, user):
     company = Company.objects.get(user=user, name=company_name)
