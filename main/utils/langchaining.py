@@ -164,9 +164,6 @@ langchain_query = {
 "employee_value_proposition": """
                 Find if there is an existing Employee Value Proposition (EVP) and paste the actual statement here.
 """,
-"culture_and_values": """
-                Locate the culture and or values of the company.
-""",
 "customer_value_proposition": """
                 Locate the tagline / CVP of the company.te
 """,
@@ -542,7 +539,7 @@ def get_key_themes_from_chatgpt(company_name):
         )
     print("In Key Themes")
 
-    json_data = {}
+    key_themes = {}
     for key, query in key_themes_query.items():
         print(key)
 
@@ -552,14 +549,30 @@ def get_key_themes_from_chatgpt(company_name):
             )
         fetched_documents = " ".join(query_results["documents"][0])
 
+        RESPONSE_JSON = {
+        "top_key_themes": [
+            {
+                "theme": "value",
+                "theme_description": "value",
+            },
+            {
+                "theme": "value",
+                "theme_description": "value",
+            }
+        ]
+    }
+
         prompt = f"""
-        First analyze the given information below:
+        First analyze the given information below and return the response in json format:
 
         Given Information: {fetched_documents}
 
         After completely analyzing the given information, fetch the data for the below query from the given information only.
 
         Question: {query}.
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Replace value with the actual data.
         """
 
         print(prompt)
@@ -567,6 +580,7 @@ def get_key_themes_from_chatgpt(company_name):
 
         completion = chat_client.chat.completions.create(
         model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
         messages = [
             {
                 "role":"system",
@@ -582,8 +596,13 @@ def get_key_themes_from_chatgpt(company_name):
         max_tokens=4000,
         )
         chat_response = completion.choices[0].message.content
-        json_data[key] = chat_response
-    return json_data
+        try:
+            key_themes = json.loads(chat_response)
+            key_themes = key_themes["top_key_themes"]
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            key_themes = {}
+        return key_themes
 
 audience_wise_messaging_query = {
 "Existing Employees":"""

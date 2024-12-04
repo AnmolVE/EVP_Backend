@@ -105,6 +105,7 @@ def get_tokens_for_user(user):
         "access": str(refresh.access_token),
         "email": str(user.email),
         "role": str(user.role),
+        "companyName": str(user.company_name),
     }
 
 class LoginAPIView(APIView):
@@ -114,8 +115,8 @@ class LoginAPIView(APIView):
         if serializer.is_valid(raise_exception=True):
             user = serializer.validated_data['user']
             login(request, user)
-            tokens = get_tokens_for_user(user)
-            return Response({"tokens": tokens}, status=status.HTTP_200_OK)
+            loginData = get_tokens_for_user(user)
+            return Response({"loginData": loginData}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class IsAdmin(permissions.BasePermission):
@@ -450,45 +451,6 @@ class SearchWebsiteView(APIView):
 
         # return Response(data_from_langchain)
         return Response(final_data)
-    
-class DesignAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        company_name = request.data.get("company_name")
-        if not company_name:
-            return Response({"error": "company_name parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            company = Company.objects.get(user=user, name=company_name)
-        except Company.DoesNotExist:
-            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        if MessagingHierarchyTabs.objects.filter(user=user, company=company).exists():
-            messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company)
-            serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        themes_data = request.data.get("themes_data")
-        if themes_data:
-            for data in themes_data:
-                MessagingHierarchyTabs.objects.create(
-                    company=company,
-                    user=user,
-                    tab_name=data["tab_name"],
-                    tabs_data=data["tabs_data"]
-                )
-            messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company)
-            serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        try:
-            design_data_from_vector_database = get_design_data_from_database(company_name, user)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(design_data_from_vector_database, status=status.HTTP_200_OK)
     
 class Top4ThemesRegenerateAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1091,20 +1053,24 @@ class KeyThemesAPIView(APIView):
         except Company.DoesNotExist:
             return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
         
-        key_themes = KeyThemes.objects.filter(company=company, user=user).first()
-
-        if key_themes:
-            serializer = KeyThemesSerializer(key_themes)
+        existing_key_themes = KeyThemes.objects.filter(company=company, user=user)
+        if existing_key_themes.exists():
+            serializer = KeyThemesSerializer(existing_key_themes, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         key_themes_from_chatgpt = get_key_themes_from_chatgpt(company_name)
         
-        key_themes = KeyThemes.objects.create(
-            user=user,
-            company=company,
-            top_key_themes = key_themes_from_chatgpt.get("top_key_themes", ""),
-        )
-        serializer = KeyThemesSerializer(key_themes)
+        created_key_themes = []
+        for theme_data in key_themes_from_chatgpt:
+            key_theme = KeyThemes.objects.create(
+                user=user,
+                company=company,
+                key_theme = theme_data["theme"],
+                key_theme_desc = theme_data["theme_description"]
+            )
+            created_key_themes.append(key_theme)
+
+        serializer = KeyThemesSerializer(created_key_themes, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class KeyThemesSpecificAPIView(APIView):
@@ -1418,6 +1384,45 @@ class MessagingHierarchySpecificAPIView(APIView):
         
         serializer = MessagingHierarchyDataSerializer(messaging_hierarchy)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class EVPStatementAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        if not company_name:
+            return Response({"error": "company_name parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if MessagingHierarchyTabs.objects.filter(user=user, company=company).exists():
+            messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company)
+            serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        themes_data = request.data.get("themes_data")
+        if themes_data:
+            for data in themes_data:
+                MessagingHierarchyTabs.objects.create(
+                    company=company,
+                    user=user,
+                    tab_name=data["tab_name"],
+                    tabs_data=data["tabs_data"]
+                )
+            messaging_hierarchy_tabs = MessagingHierarchyTabs.objects.filter(user=user, company=company)
+            serializer = MessagingHierarchyTabsSerializer(messaging_hierarchy_tabs, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        try:
+            design_data_from_vector_database = get_design_data_from_database(company_name, user)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response(design_data_from_vector_database, status=status.HTTP_200_OK)
 
 class CreativeDirectionAPIView(APIView):
     permission_classes = [IsAuthenticated]

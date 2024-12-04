@@ -4,12 +4,12 @@ from .models import *
 
 class NewUserAdmin(UserAdmin):
     model = NewUser
-    list_display = ['email', "role", 'is_staff', 'is_active', 'created_at', 'updated_at']
+    list_display = ['email', "role", "company_name", 'is_staff', 'is_active', 'created_at', 'updated_at']
     ordering = ['email']
     search_fields = ('email',)
     
     fieldsets = (
-        (None, {'fields': ('email', 'role', 'password')}),
+        (None, {'fields': ('email', 'role', 'company_name', 'password')}),
         ('Personal info', {'fields': ()}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
         ('Important dates', {'fields': ('last_login', 'created_at', 'updated_at')}),
@@ -18,7 +18,7 @@ class NewUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'role', 'password1', 'password2', 'is_active', 'is_staff', 'is_superuser'),
+            'fields': ('email', 'role', 'company_name', 'password1', 'password2', 'is_active', 'is_staff', 'is_superuser'),
         }),
     )
 
@@ -43,7 +43,6 @@ class CompanyAdmin(admin.ModelAdmin):
                     'twitter_info',
                     'glassdoor_score',
                     'employee_value_proposition',
-                    'culture_and_values',
                     'customer_value_proposition',
                     'purpose',
                     'vision',
@@ -88,7 +87,7 @@ class AttributesOfGreatPlaceAdmin(admin.ModelAdmin):
     list_filter = ["company"]
 
 class KeyThemesAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "company", "top_key_themes"]
+    list_display = ["id", "user", "company", "key_theme", "key_theme_desc"]
     list_filter = ["company"]
 
 class AudienceWiseMessagingAdmin(admin.ModelAdmin):

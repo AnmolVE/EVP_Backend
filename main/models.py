@@ -38,6 +38,7 @@ class NewUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_("email address"), unique=True)
     role = models.CharField(choices=ROLE_CHOICES, max_length=100,
                             default="User")
+    company_name = models.CharField(max_length=500, default="")
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -68,7 +69,6 @@ class Company(models.Model):
     twitter_info = models.TextField(null=True, blank=True)
     glassdoor_score = models.TextField(null=True, blank=True)
     employee_value_proposition = models.TextField(null=True, blank=True)
-    culture_and_values = models.TextField(null=True, blank=True)
     customer_value_proposition = models.TextField(null=True, blank=True)
     purpose = models.TextField(null=True, blank=True)
     vision = models.TextField(null=True, blank=True)
@@ -212,7 +212,8 @@ class AttributesOfGreatPlace(models.Model):
 class KeyThemes(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    top_key_themes = models.TextField(null=True, blank=True)
+    key_theme = models.TextField(null=True, blank=True)
+    key_theme_desc = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.company.name} - Key Themes"

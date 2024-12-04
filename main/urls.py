@@ -18,7 +18,7 @@ urlpatterns = [
     path("chatbot/", ChatBotAPIView.as_view(), name="search"),
     
     path("search/", SearchWebsiteView.as_view(), name="search"),
-    path("design/", DesignAPIView.as_view(), name="design"),
+    path("evp-statement/", EVPStatementAPIView.as_view(), name="evp-statement"),
     path("themes-regenerate/", Top4ThemesRegenerateAPIView.as_view(), name="themes-regenerate"),
     path("send-mail/", SendMailAPIView.as_view(), name="send-mail"),
     path("transcript/<str:company_name>/", TranscriptAPIView.as_view(), name="transcript"),
