@@ -83,7 +83,7 @@ class BrandAdmin(admin.ModelAdmin):
     list_filter = ["company"]
 
 class AttributesOfGreatPlaceAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "company", "culture", "purpose_and_values", "benefits_perks", "career_development", "office_and_facilities", "office_and_facilities", "leadership_and_management", "rewards_and_recognition", "teamwork_and_collaboration", "brand_and_reputation", "work_life_balance"]
+    list_display = ["id", "user", "company", "culture", "purpose_and_values", "benefits_perks", "career_development", "office_and_facilities", "leadership_and_management", "rewards_and_recognition", "teamwork_and_collaboration", "brand_and_reputation", "work_life_balance"]
     list_filter = ["company"]
 
 class KeyThemesAdmin(admin.ModelAdmin):

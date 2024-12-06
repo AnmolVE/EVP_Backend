@@ -482,6 +482,10 @@ def get_attributes_of_great_place_from_chatgpt(company_name):
     for key, query in attributes_of_great_place_query.items():
         print(key)
 
+        RESPONSE_JSON = {
+            key: query,
+        }
+
         query_results = develop_collection.query(
                 query_texts=[query],
                 n_results=10,
@@ -489,13 +493,18 @@ def get_attributes_of_great_place_from_chatgpt(company_name):
         fetched_documents = " ".join(query_results["documents"][0])
 
         prompt = f"""
-        First analyze the given information below:
+        First analyze the given information below and returns the response in json format:
 
         Given Information: {fetched_documents}
 
         After completely analyzing the given information, fetch the data for the below query from the given information only.
 
         Question: {query}.
+
+        Don't create any heading or sub heading, just give the response as a single paragraph.
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Add keys as it is and replace the value with the actual data.
         """
 
         print(prompt)
@@ -503,6 +512,7 @@ def get_attributes_of_great_place_from_chatgpt(company_name):
 
         completion = chat_client.chat.completions.create(
         model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
         messages = [
             {
                 "role":"system",
@@ -518,8 +528,14 @@ def get_attributes_of_great_place_from_chatgpt(company_name):
         max_tokens=4000,
         )
         chat_response = completion.choices[0].message.content
-        json_data[key] = chat_response
+        try:
+            attributes = json.loads(chat_response)
+            json_data[key] = attributes[key]
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            attributes = {}
     return json_data
+        
 
 key_themes_query = {
 "top_key_themes":"""
@@ -663,6 +679,10 @@ def get_audience_wise_messaging_from_chatgpt(company_name):
     for key, query in audience_wise_messaging_query.items():
         print(key)
 
+        RESPONSE_JSON = {
+            key: query,
+        }
+
         query_results = develop_collection.query(
                 query_texts=[query],
                 n_results=10,
@@ -670,13 +690,18 @@ def get_audience_wise_messaging_from_chatgpt(company_name):
         fetched_documents = " ".join(query_results["documents"][0])
 
         prompt = f"""
-        First analyze the given information below:
+        First analyze the given information below and returns the response in json format:
 
         Given Information: {fetched_documents}
 
         After completely analyzing the given information, fetch the data for the below query from the given information only.
 
         Question: {query}.
+
+        Don't create any heading or sub heading, just give the response as a single paragraph.
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Add keys as it is and replace the value with the actual data.
         """
 
         print(prompt)
@@ -684,6 +709,7 @@ def get_audience_wise_messaging_from_chatgpt(company_name):
 
         completion = chat_client.chat.completions.create(
         model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
         messages = [
             {
                 "role":"system",
@@ -699,7 +725,12 @@ def get_audience_wise_messaging_from_chatgpt(company_name):
         max_tokens=4000,
         )
         chat_response = completion.choices[0].message.content
-        json_data[key] = chat_response
+        try:
+            audiences = json.loads(chat_response)
+            json_data[key] = audiences[key]
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            audiences = {}
     return json_data
 
 def get_talent_insights_from_chatgpt(company_name):
@@ -857,10 +888,8 @@ def get_talent_insights_from_chatgpt(company_name):
 
 swot_analysis_query = {
 "what_is_working_well_for_the_organization": """Identify the attributes that highlight what is working well for the organization. Focus on aspects that employees and external reviewers consistently praise or express satisfaction with. Provide detailed insights on these positive aspects and how they contribute to the overall success and positive reputation of the organization.
-        Create multiple headings and give the description of those headings and summarize them.
 """,
 "what_is_not_working_well_for_the_organization": """Analyze the provided data to identify the top insights/themes that highlight what is not working well for the organization. Focus on aspects that employees and external reviewers consistently criticize or express concerns about. Provide detailed insights on these negative aspects and how they impact employee satisfaction and the overall performance of the organization.
-        Create multiple headings and give the description after summarizing them as I only want summary.
 """
 }
 
@@ -868,8 +897,8 @@ def get_analysis_data_from_vector_chatgpt(company, user):
     attributes_of_great_place_vector = AttributesOfGreatPlace.objects.get(user=user, company=company)
     attributes_of_great_place_vector_serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_place_vector)
 
-    key_themes_vector = KeyThemes.objects.get(user=user, company=company)
-    key_themes_vector_serializer = KeyThemesSerializer(key_themes_vector)
+    key_themes_vector = KeyThemes.objects.filter(user=user, company=company)
+    key_themes_vector_serializer = KeyThemesSerializer(key_themes_vector, many=True)
 
     audience_wise_messaging_vector = AudienceWiseMessaging.objects.get(user=user, company=company)
     audience_wise_messaging_vector_serializer = AudienceWiseMessagingSerializer(audience_wise_messaging_vector)
@@ -885,9 +914,14 @@ def get_analysis_data_from_vector_chatgpt(company, user):
 
     json_data = {}
     for key, query in swot_analysis_query.items():
+
+        RESPONSE_JSON = {
+            key: query,
+        }
+
         prompt = f"""
                 I want to fetch the information from the given data.
-                First analyze the complete data below
+                First analyze the complete data below and returns the response in json format:
                 data : {formatted_string}
 
                 Now fetch the below information from the data and give me 5 points on this.
@@ -895,10 +929,16 @@ def get_analysis_data_from_vector_chatgpt(company, user):
 
                 **Note :** Fetch the complete information from the given data only and don't include anything extra.
                 Don't add anything which you don't find in the given data just give the information which is available in the given data.
+
+                Don't create any heading or sub heading, just give the response as a single paragraph.
+
+                Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+                Add keys as it is and replace the value with the actual data.
         """
 
         completion = chat_client.chat.completions.create(
         model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
         messages = [
                 {"role": "system", "content": f"You are an expert Research Analyst."},
                 {"role": "user", "content": prompt}
@@ -906,9 +946,13 @@ def get_analysis_data_from_vector_chatgpt(company, user):
         temperature=0.7,
         max_tokens=4000,
         )
-        response = completion.choices[0].message.content
-        json_data[key] = response
-
+        chat_response = completion.choices[0].message.content
+        try:
+            analysis = json.loads(chat_response)
+            json_data[key] = analysis[key]
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            analysis = {}
     return json_data
 
 def get_alignment_data_from_vector_database(company, user, design_principles):
