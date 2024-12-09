@@ -248,7 +248,9 @@ class SwotAnalysis(models.Model):
 class Alignment(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    what_we_want_to_be_known_for = models.TextField(null=True, blank=True)
+    theme_name = models.TextField(null=True, blank=True)
+    positive_aspects = models.TextField(null=True, blank=True)
+    negative_aspects = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.company.name} - Alignment"

@@ -959,8 +959,8 @@ def get_alignment_data_from_vector_database(company, user, design_principles):
     attributes_of_great_place_vector = AttributesOfGreatPlace.objects.get(user=user, company=company)
     attributes_of_great_place_vector_serializer = AttributesOfGreatPlaceSerializer(attributes_of_great_place_vector)
 
-    key_themes_vector = KeyThemes.objects.get(user=user, company=company)
-    key_themes_vector_serializer = KeyThemesSerializer(key_themes_vector)
+    key_themes_vector = KeyThemes.objects.filter(user=user, company=company)
+    key_themes_vector_serializer = KeyThemesSerializer(key_themes_vector, many=True)
 
     audience_wise_messaging_vector = AudienceWiseMessaging.objects.get(user=user, company=company)
     audience_wise_messaging_vector_serializer = AudienceWiseMessagingSerializer(audience_wise_messaging_vector)
@@ -974,13 +974,26 @@ def get_alignment_data_from_vector_database(company, user, design_principles):
     formatted_string = json.dumps(whole_data)
     print(len(formatted_string))
 
-    json_data = {}
-    prompt = f"""First analyze both datasets below:
+    RESPONSE_JSON = {
+        "alignment": [
+            {
+                "theme_name": "",
+                "positive_aspects": "",
+                "negative_aspects": "",
+            },
+            {
+                "theme_name": "",
+                "positive_aspects": "",
+                "negative_aspects": "",
+            }
+        ]
+    }
+    prompt = f"""First analyze both datasets below and returns the response in json format:
 
         Review the primary research available in entire Dataset 1 (both sections 'whats working well' and whats not working well).
         **Dataset 1** : {formatted_string}
 
-        **what we want to be known for**: {design_principles}
+        **Design Principles**: {design_principles}
 
         -Identify and extract 5 key themes that the company wants to be known for, based on the design principles questions.
         -Using the information available in Dataset 1,provide a detailed summary that captures both positive and negative aspects for each theme.
@@ -992,12 +1005,15 @@ def get_alignment_data_from_vector_database(company, user, design_principles):
         -Guidelines:
             Extract information only from Dataset 1. If information is not available, state: "The information is not available."
             Do not rely solely on exact word or phrase matches; intelligently correlate data points by focusing on the underlying meaning and context of the responses.
+            Don't create any heading or sub heading in positive and negative aspects, , just give the response as a single paragraph.
 
-        Arrange all points in numbers.
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Add actual data as the value of keys.
     """
 
     completion = chat_client.chat.completions.create(
     model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
     messages = [
             {"role": "system", "content": f"You are an expert Research Analyst."},
             {"role": "user", "content": prompt}
@@ -1005,10 +1021,14 @@ def get_alignment_data_from_vector_database(company, user, design_principles):
     temperature=0.1,
     max_tokens=4000,
     )
-    response = completion.choices[0].message.content
-    json_data["what we want to be known for"] = response
-
-    return json_data
+    chat_response = completion.choices[0].message.content
+    try:
+        alignment = json.loads(chat_response)
+        alignment = alignment["alignment"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        alignment = {}
+    return alignment
 
 def get_design_data_from_database(company_name, user):
     company = Company.objects.get(user=user, name=company_name)

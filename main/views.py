@@ -1270,10 +1270,10 @@ class AlignmentAPIView(APIView):
         except Company.DoesNotExist:
             return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        alignment =  Alignment.objects.filter(user=user, company=company).first()
+        alignments =  Alignment.objects.filter(user=user, company=company)
 
-        if alignment:
-            serializer = AlignmentSerializer(alignment)
+        if alignments:
+            serializer = AlignmentSerializer(alignments, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         try:
@@ -1288,13 +1288,21 @@ class AlignmentAPIView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        alignment = Alignment.objects.create(
-            user=user,
-            company=company,
-            what_we_want_to_be_known_for = alignment_data_from_vector_database.get("what we want to be known for", "")
-        )
+        for alignment_data in alignment_data_from_vector_database:
+            theme_name = alignment_data.get("theme_name", "")
+            positive_aspects = alignment_data.get("positive_aspects", "")
+            negative_aspects = alignment_data.get("negative_aspects", "")
 
-        serializer = AlignmentSerializer(alignment)
+            Alignment.objects.create(
+                user=user,
+                company=company,
+                theme_name=theme_name,
+                positive_aspects=positive_aspects,
+                negative_aspects=negative_aspects
+            )
+
+        alignments = Alignment.objects.filter(user=user,company=company)
+        serializer = AlignmentSerializer(alignments, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class AlignmentSpecificAPIView(APIView):

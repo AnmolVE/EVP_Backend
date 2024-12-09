@@ -99,7 +99,7 @@ class SwotAnalysisAdmin(admin.ModelAdmin):
     list_filter = ["company"]
 
 class AlignmentAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "company", "what_we_want_to_be_known_for"]
+    list_display = ["id", "user", "company", "theme_name", "positive_aspects", "negative_aspects"]
     list_filter = ["company"]
 
 class MessagingHierarchyTabsAdmin(admin.ModelAdmin):
