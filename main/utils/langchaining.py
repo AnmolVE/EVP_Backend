@@ -1030,6 +1030,81 @@ def get_alignment_data_from_vector_database(company, user, design_principles):
         alignment = {}
     return alignment
 
+def get_evp_statement_themes_from_chatgpt(company_name, user):
+    company = Company.objects.get(user=user, name=company_name)
+    company_id = company.id
+
+    analysis_vector = SwotAnalysis.objects.get(user=user, company=company_id)
+    analysis_vector_serializer = SwotAnalysisSerializer(analysis_vector)
+
+    alignment_vector = Alignment.objects.filter(user=user, company=company_id)
+    alignment_vector_serializer = AlignmentSerializer(alignment_vector, many=True)
+
+    whole_data = {
+        "analysis_vector": analysis_vector_serializer.data,
+        "alignment_vector": alignment_vector_serializer.data,
+    }
+
+    formatted_string = json.dumps(whole_data)
+
+    query = """Identify 4 themes that are unique about the company and will help it stand out as an employer. Focus on themes that are different from standard good HR practices. These themes should be believable about the company but also have an element of aspiration, which means that these could be things the company aspires towards and may not have completely achieve yet.
+                Rank these themes from most relevant to least relevant and don't include numbers or anything just headings and description.
+            """
+    
+    RESPONSE_JSON = {
+            "themes": [
+            {
+                "id": "1",
+                "theme_name": "heading1",
+                "theme_desc": "description1",
+            },
+            {
+                "id": "2",
+                "theme_name": "heading2",
+                "theme_desc": "description2",
+            },
+        ]
+    }
+
+    prompt = f"""
+        Information: {formatted_string}.
+
+        Analyze the complete information above.
+        After analyzing it, give the response in json format.
+
+        Question: {query}
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Replace headings and description with the actual value.
+        """
+
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are a helpful expert research assistant.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+        json_response = json_response["themes"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+
+    return json_response
+
 def get_design_data_from_database(company_name, user):
     company = Company.objects.get(user=user, name=company_name)
     company_id = company.id

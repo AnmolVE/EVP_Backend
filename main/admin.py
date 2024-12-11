@@ -102,6 +102,10 @@ class AlignmentAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "theme_name", "positive_aspects", "negative_aspects"]
     list_filter = ["company"]
 
+class EVPStatementThemesAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "theme_name", "theme_desc"]
+    list_filter = ["company"]
+
 class MessagingHierarchyTabsAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "tab_name", "tabs_data"]
     list_filter = ["company"]
@@ -182,6 +186,7 @@ admin.site.register(KeyThemes, KeyThemesAdmin)
 admin.site.register(AudienceWiseMessaging, AudienceWiseMessagingAdmin)
 admin.site.register(SwotAnalysis, SwotAnalysisAdmin)
 admin.site.register(Alignment, AlignmentAdmin)
+admin.site.register(EVPStatementThemes, EVPStatementThemesAdmin)
 admin.site.register(MessagingHierarchyTabs, MessagingHierarchyTabsAdmin)
 admin.site.register(MessagingHierarchyData, MessagingHierarchyDataAdmin)
 admin.site.register(CreativeDirection, CreativeDirectionAdmin)

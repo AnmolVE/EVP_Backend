@@ -254,6 +254,15 @@ class Alignment(models.Model):
 
     def __str__(self):
         return f"{self.company.name} - Alignment"
+    
+class EVPStatementThemes(models.Model):
+    user = models.ForeignKey(NewUser, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    theme_name = models.CharField(max_length=500, null=True, blank=True)
+    theme_desc = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company.name} - EVPStatementThemes"
 
 class MessagingHierarchyTabs(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)

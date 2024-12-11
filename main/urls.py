@@ -43,6 +43,7 @@ urlpatterns = [
     path("swot-analysis/<str:company_name>/", SwotAnalysisSpecificAPIView.as_view(), name='swot-analysis-specific'),
     path("alignment/", AlignmentAPIView.as_view(), name='alignment'),
     path("alignment/<str:company_name>/", AlignmentSpecificAPIView.as_view(), name='alignment-specific'),
+    path("evp-statement-themes/", EVPStatementThemesAPIView.as_view(), name="evp-statement-themes"),
     path("messaging-hierarchy/<str:company_name>/", MessagingHierarchySpecificAPIView.as_view(), name='messaging-hierarchy'),
     path("tagline/", TaglineAPIView.as_view(), name='tagline'),
     path("creative-direction/", CreativeDirectionAPIView.as_view(), name="creative-direction"),
