@@ -1303,19 +1303,30 @@ def get_tagline(
     return chat_response
 
 def get_creative_direction_from_chatgpt(brand_guidelines, tagline):
+
+    RESPONSE_JSON = {
+        "creative_direction": {
+            "tagline": "value",
+            "visual_concept": "value",
+        }
+    }
     
     prompt = f"""
-                First analyze the brand guidelines and tagline given below:
+                First analyze the brand guidelines and tagline given below and returns the response in json format:
 
                 Brand Guidelines : {brand_guidelines}
 
                 Tagline : {tagline}
 
                 Now suggest a single visual that captures the tagline and advertising body copy from the messaging hierarchy section while adhering to the company's brand guidelines in terms of color, style, tone etc as well as the industry of the company. Focus on creating one visual that focuses mainly on the 'overarching theme' and very subtly incorporates the secondary pillars.
+
+                Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+                Replace value with the actual data.
              """
 
     completion = chat_client.chat.completions.create(
     model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
     messages = [
         {
             "role":"system",
@@ -1331,7 +1342,14 @@ def get_creative_direction_from_chatgpt(brand_guidelines, tagline):
     max_tokens=4000,
     )
     chat_response = completion.choices[0].message.content
-    return chat_response
+    try:
+        json_response = json.loads(chat_response)
+        json_response = json_response["creative_direction"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+
+    return json_response
 
 def get_evp_definition_from_chatgpt(company_name, user, analysis_data, alignment_data, all_themes):
     company = Company.objects.get(name=company_name)

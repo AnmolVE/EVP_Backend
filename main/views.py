@@ -1490,17 +1490,6 @@ class CreativeDirectionAPIView(APIView):
             serializer = CreativeDirectionSerializer(creative_direction)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        creative_direction_data = request.data.get("creative_direction_data")
-
-        if creative_direction_data:
-            creative_direction = CreativeDirection.objects.create(
-                company=company,
-                user=user,
-                creative_direction_data=creative_direction_data,
-            )
-            serializer = CreativeDirectionSerializer(creative_direction)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
         try:
             messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company)
         except MessagingHierarchyData.DoesNotExist:
@@ -1516,8 +1505,16 @@ class CreativeDirectionAPIView(APIView):
             )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        creative_direction = CreativeDirection.objects.create(
+            user=user,
+            company=company,
+            tagline=creative_direction_from_chatgpt["tagline"],
+            visual_concept=creative_direction_from_chatgpt["visual_concept"]
+        )
+        serializer = CreativeDirectionSerializer(creative_direction)
 
-        return Response({"creative_direction_data": creative_direction_from_chatgpt})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 class EVPDefinitionAPIView(APIView):
     permission_classes = [IsAuthenticated]

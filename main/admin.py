@@ -115,7 +115,7 @@ class MessagingHierarchyDataAdmin(admin.ModelAdmin):
     list_filter = ["company"]
 
 class CreativeDirectionAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "company", "creative_direction_data"]
+    list_display = ["id", "user", "company", "tagline", "visual_concept"]
     list_filter = ["company"]
 
 class EVPDefinitionAdmin(admin.ModelAdmin):

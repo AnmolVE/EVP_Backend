@@ -288,7 +288,8 @@ class MessagingHierarchyData(models.Model):
 class CreativeDirection(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    creative_direction_data = models.TextField(null=True, blank=True)
+    tagline = models.TextField(null=True, blank=True)
+    visual_concept = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.company.name} - Creative Direction"
