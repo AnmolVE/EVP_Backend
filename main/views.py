@@ -47,6 +47,7 @@ from .utils.langchaining import (
     get_talent_dataset_from_chatgpt,
     testing_data,
     create_embeddings,
+    get_design_principles,
     query_with_langchain,
     save_pgData_to_vector_database,
     save_data_to_vector_database,
@@ -423,9 +424,10 @@ class SearchWebsiteView(APIView):
 
             data_from_bing = get_data_from_bing(company_name, fields_to_query_with_bing)
 
-            data_with_values_from_bing = {field: value for field, value in data_from_bing.items() if not re.search(r'not\s*found', value, re.IGNORECASE)}
+            if (len(data_from_bing)) > 0:
+                data_with_values_from_bing = {field: value for field, value in data_from_bing.items() if not re.search(r'not\s*found', value, re.IGNORECASE)}
 
-            final_data.update(data_with_values_from_bing)
+                final_data.update(data_with_values_from_bing)
 
             # fields_to_query_with_chatgpt_1 = {field: "" for field in chatgpt_1_query_data if field in empty_fields_from_langchain}
 
@@ -653,6 +655,51 @@ class DesignPrinciplesAPIView(APIView):
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"message": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if "documents" in request.FILES:
+            if os.path.exists(r"media\documents"):
+                for filename in os.listdir(r"media\documents"):
+                    file_path = os.path.join(r"media\documents", filename)
+                    try:
+                        if os.path.isfile(file_path) or os.path.islink(file_path):
+                            os.unlink(file_path)
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)
+                    except Exception as e:
+                        print(f'Failed to delete {file_path}. Reason: {e}')
+            uploaded_documents = request.FILES.getlist("documents")
+            all_documents = []
+            for document in uploaded_documents:
+                response = save_documents(document, "documents")
+                all_documents.append(response)
+            merge_documents("media\documents", "final_pdf", "merged_pdf.pdf")
+            design_principles = get_design_principles(company_name)
+            DesignPrinciples.objects.create(
+            user=user,
+            company=company,
+            question_1=design_principles["question_1"],
+            question_2=design_principles["question_2"],
+            question_3=design_principles["question_3"],
+            question_4=design_principles["question_4"],
+            question_5=design_principles["question_5"],
+            question_6=design_principles["question_6"],
+            question_7=design_principles["question_7"],
+            question_8=design_principles["question_8"],
+            question_9=design_principles["question_9"],
+            question_10=design_principles["question_10"],
+            question_11=design_principles["question_11"],
+            question_12=design_principles["question_12"],
+            question_13=design_principles["question_13"],
+            question_14=design_principles["question_14"],
+            question_15=design_principles["question_15"],
+            )
+
+            return Response(
+                "Design Principles saved successfully",
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            uploaded_documents = None
 
         design_principles = request.data.get("design_principles")
 
@@ -1366,7 +1413,7 @@ class EVPStatementThemesAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     
-class TaglineAPIView(APIView):
+class GenerateEVPStatementAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -1375,40 +1422,45 @@ class TaglineAPIView(APIView):
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
+            print("failed")
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
         company_id = company.id
 
         main_theme = request.data.get("main_theme")
-        pillars = request.data.get("pillars", [])
+        pillar_1 = request.data.get("pillar_1")
+        pillar_2 = request.data.get("pillar_2")
+        pillar_3 = request.data.get("pillar_3")
         tagline = request.data.get("tagline")
 
-        if MessagingHierarchyData.objects.filter(user=user, company=company_id).exists():
-            existing_messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company_id)
-            serializer = MessagingHierarchyDataSerializer(existing_messaging_hierarchy_data)
+        if EVPStatement.objects.filter(user=user, company=company_id).exists():
+            existing_messaging_hierarchy_data = EVPStatement.objects.get(user=user, company=company_id)
+            serializer = EVPStatementSerializer(existing_messaging_hierarchy_data)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         if tagline:
-            messaging_hierarchy_data = MessagingHierarchyData(
+            messaging_hierarchy_data = EVPStatement(
                 user=user,
                 company = company,
                 main_theme = main_theme,
-                pillar_1 = pillars[0] if len(pillars) > 0 else None,
-                pillar_2 = pillars[1] if len(pillars) > 1 else None,
-                pillar_3 = pillars[2] if len(pillars) > 2 else None,
+                pillar_1 = pillar_1,
+                pillar_2 = pillar_2,
+                pillar_3 = pillar_3,
                 tagline = tagline,
             )
             messaging_hierarchy_data.save()
-            serializer = MessagingHierarchyDataSerializer(messaging_hierarchy_data)
+            serializer = EVPStatementSerializer(messaging_hierarchy_data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         else:
-            tabs_data_instances = MessagingHierarchyTabs.objects.filter(user=user, company=company_id)
-            combined_tabs_data = " ".join(instance.tabs_data for instance in tabs_data_instances)
+            tabs_data_instances = EVPStatementThemes.objects.filter(user=user, company=company_id)
+            combined_tabs_data = " ".join(instance.theme_desc for instance in tabs_data_instances)
 
         tagline = get_tagline(
             main_theme,
             combined_tabs_data,
-            pillars,
+            pillar_1,
+            pillar_2,
+            pillar_3
         )
         return Response({"tagline": tagline})
     
@@ -1491,8 +1543,8 @@ class CreativeDirectionAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         try:
-            messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company)
-        except MessagingHierarchyData.DoesNotExist:
+            messaging_hierarchy_data = EVPStatement.objects.get(user=user, company=company)
+        except EVPStatement.DoesNotExist:
             return Response({"error": "Messaging hierarchy data not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
         
         brand_guidelines = company.brand_guidelines
@@ -1540,26 +1592,26 @@ class EVPDefinitionAPIView(APIView):
             return Response({"error": "SWOT analysis not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            alignment_instance = Alignment.objects.get(user=user, company=company)
-            serializer = AlignmentSerializer(alignment_instance)
+            alignment_instance = Alignment.objects.filter(user=user, company=company)
+            serializer = AlignmentSerializer(alignment_instance, many=True)
             alignment_data = serializer.data
         except Alignment.DoesNotExist:
             return Response({"error": "Alignment data not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
         
         try:
-            messaging_hierarchy_data_instance = MessagingHierarchyData.objects.get(user=user, company=company)
-        except MessagingHierarchyData.DoesNotExist:
+            evp_statement_instance = EVPStatement.objects.get(user=user, company=company)
+        except EVPStatement.DoesNotExist:
             return Response({"error": "Messaging Hierarchy Data does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
         themes_data_list = []
-        if messaging_hierarchy_data_instance.main_theme is not None and len(messaging_hierarchy_data_instance.main_theme) > 0:
-            themes_data_list.append(messaging_hierarchy_data_instance.main_theme)
-        if messaging_hierarchy_data_instance.pillar_1 is not None and len(messaging_hierarchy_data_instance.pillar_1) > 0:
-            themes_data_list.append(messaging_hierarchy_data_instance.pillar_1)
-        if messaging_hierarchy_data_instance.pillar_2 is not None and len(messaging_hierarchy_data_instance.pillar_2) > 0:
-            themes_data_list.append(messaging_hierarchy_data_instance.pillar_2)
-        if messaging_hierarchy_data_instance.pillar_3 is not None and len(messaging_hierarchy_data_instance.pillar_3) > 0:
-            themes_data_list.append(messaging_hierarchy_data_instance.pillar_3)
+        if evp_statement_instance.main_theme is not None and len(evp_statement_instance.main_theme) > 0:
+            themes_data_list.append(evp_statement_instance.main_theme)
+        if evp_statement_instance.pillar_1 is not None and len(evp_statement_instance.pillar_1) > 0:
+            themes_data_list.append(evp_statement_instance.pillar_1)
+        if evp_statement_instance.pillar_2 is not None and len(evp_statement_instance.pillar_2) > 0:
+            themes_data_list.append(evp_statement_instance.pillar_2)
+        if evp_statement_instance.pillar_3 is not None and len(evp_statement_instance.pillar_3) > 0:
+            themes_data_list.append(evp_statement_instance.pillar_3)
 
         all_themes = ", ".join(themes_data_list)
 
@@ -1586,16 +1638,16 @@ class EVPPromiseAPIView(APIView):
             serializer = EVPPromiseSerializer(evp_promise, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company)
+        evp_statement_data = EVPStatement.objects.get(user=user, company=company)
         all_themes = []
-        if messaging_hierarchy_data.main_theme is not None and len(messaging_hierarchy_data.main_theme):
-            all_themes.append(messaging_hierarchy_data.main_theme)
-        if messaging_hierarchy_data.pillar_1 is not None and len(messaging_hierarchy_data.pillar_1):
-            all_themes.append(messaging_hierarchy_data.pillar_1)
-        if messaging_hierarchy_data.pillar_2 is not None and len(messaging_hierarchy_data.pillar_2):
-            all_themes.append(messaging_hierarchy_data.pillar_2)
-        if messaging_hierarchy_data.pillar_3 is not None and len(messaging_hierarchy_data.pillar_3):
-            all_themes.append(messaging_hierarchy_data.pillar_3)
+        if evp_statement_data.main_theme is not None and len(evp_statement_data.main_theme):
+            all_themes.append(evp_statement_data.main_theme)
+        if evp_statement_data.pillar_1 is not None and len(evp_statement_data.pillar_1):
+            all_themes.append(evp_statement_data.pillar_1)
+        if evp_statement_data.pillar_2 is not None and len(evp_statement_data.pillar_2):
+            all_themes.append(evp_statement_data.pillar_2)
+        if evp_statement_data.pillar_3 is not None and len(evp_statement_data.pillar_3):
+            all_themes.append(evp_statement_data.pillar_3)
 
         try:
             evp_promise_from_chatgpt = get_evp_promise_from_chatgpt(company_name, user, all_themes)
@@ -1628,22 +1680,22 @@ class EVPAuditAPIView(APIView):
             return Response({"error": "SWOT analysis not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            alignment_instance = Alignment.objects.get(user=user, company=company)
-            serializer = AlignmentSerializer(alignment_instance)
+            alignment_instance = Alignment.objects.filter(user=user, company=company)
+            serializer = AlignmentSerializer(alignment_instance, many=True)
             alignment_data = serializer.data
         except Alignment.DoesNotExist:
             return Response({"error": "Alignment data not found for the specified company"}, status=status.HTTP_404_NOT_FOUND)
 
-        messaging_hierarchy_data = MessagingHierarchyData.objects.get(user=user, company=company)
+        evp_statement_data = EVPStatement.objects.get(user=user, company=company)
         all_themes = []
-        if messaging_hierarchy_data.main_theme is not None and len(messaging_hierarchy_data.main_theme):
-            all_themes.append(messaging_hierarchy_data.main_theme)
-        if messaging_hierarchy_data.pillar_1 is not None and len(messaging_hierarchy_data.pillar_1):
-            all_themes.append(messaging_hierarchy_data.pillar_1)
-        if messaging_hierarchy_data.pillar_2 is not None and len(messaging_hierarchy_data.pillar_2):
-            all_themes.append(messaging_hierarchy_data.pillar_2)
-        if messaging_hierarchy_data.pillar_3 is not None and len(messaging_hierarchy_data.pillar_3):
-            all_themes.append(messaging_hierarchy_data.pillar_3)
+        if evp_statement_data.main_theme is not None and len(evp_statement_data.main_theme):
+            all_themes.append(evp_statement_data.main_theme)
+        if evp_statement_data.pillar_1 is not None and len(evp_statement_data.pillar_1):
+            all_themes.append(evp_statement_data.pillar_1)
+        if evp_statement_data.pillar_2 is not None and len(evp_statement_data.pillar_2):
+            all_themes.append(evp_statement_data.pillar_2)
+        if evp_statement_data.pillar_3 is not None and len(evp_statement_data.pillar_3):
+            all_themes.append(evp_statement_data.pillar_3)
 
         try:
             evp_audit_from_chatgpt = get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data, all_themes)

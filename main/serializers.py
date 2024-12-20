@@ -119,6 +119,11 @@ class EVPStatementThemesSerializer(serializers.ModelSerializer):
         model = EVPStatementThemes
         fields = "__all__"
 
+class EVPStatementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EVPStatement
+        fields = "__all__"
+
 class CreativeDirectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CreativeDirection

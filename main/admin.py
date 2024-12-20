@@ -114,6 +114,10 @@ class MessagingHierarchyDataAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "main_theme", "pillar_1", "pillar_2", "pillar_3", "tagline"]
     list_filter = ["company"]
 
+class EVPStatementAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "main_theme", "pillar_1", "pillar_2", "pillar_3", "tagline"]
+    list_filter = ["company"]
+
 class CreativeDirectionAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "tagline", "visual_concept"]
     list_filter = ["company"]
@@ -187,6 +191,7 @@ admin.site.register(AudienceWiseMessaging, AudienceWiseMessagingAdmin)
 admin.site.register(SwotAnalysis, SwotAnalysisAdmin)
 admin.site.register(Alignment, AlignmentAdmin)
 admin.site.register(EVPStatementThemes, EVPStatementThemesAdmin)
+admin.site.register(EVPStatement, EVPStatementAdmin)
 admin.site.register(MessagingHierarchyTabs, MessagingHierarchyTabsAdmin)
 admin.site.register(MessagingHierarchyData, MessagingHierarchyDataAdmin)
 admin.site.register(CreativeDirection, CreativeDirectionAdmin)

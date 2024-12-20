@@ -69,41 +69,42 @@ def get_data_from_bing(company_name, fields_to_query_with_bing):
     all_data_from_chatgpt_2 = {}
 
     try:
-        for field, query_field in fields_to_query_with_bing.items():
-            print("bing : ", query_field)
-            snippet_data = ""
-            query_params = query_field.format(company=company_name)
-            params = {
-                    'q': query_params,
-                    'count': 50,
-                    # "offset": i,
-                    # "mkt": mkt,
-                    # "freshness": "Month"
-                }
-            response = requests.get(endpoint, headers=headers, params=params)
+        for field, query_field in bing_query_data.items():
+            if field in fields_to_query_with_bing:
+                print("bing : ", query_field)
+                snippet_data = ""
+                query_params = query_field.format(company=company_name)
+                params = {
+                        'q': query_params,
+                        'count': 50,
+                        # "offset": i,
+                        # "mkt": mkt,
+                        # "freshness": "Month"
+                    }
+                response = requests.get(endpoint, headers=headers, params=params)
 
-            response.raise_for_status()
+                response.raise_for_status()
 
-            crawl_data = response.json()
+                crawl_data = response.json()
 
-            if query_field in ['LinkedIn URL and followers', "Instagram UR and followers", "Tiktok URL and followers", "Facebook URL and followers", "Twitter(X) URL and followers"]:
-                relevant_info_from_query = crawl_data.get("webPages", {}).get("value", [])
-                snippet_data = extract_snippet_data(relevant_info_from_query, 3)
-                url = crawl_data.get("webPages", {}).get("value", [])[0]["url"]
-                snippet_data += f" The url is : {url}"
-                data_from_chatgpt_2 = get_data_from_chatgpt_2(snippet_data, field)
-                cleaned_result = re.sub(r'\\', '', data_from_chatgpt_2)
-                cleaned_result = re.sub(r'\n', '', cleaned_result)
-                cleaned_result = cleaned_result.strip('"')
-                all_data_from_chatgpt_2[field] = cleaned_result
-            else:
-                relevant_info_from_query = crawl_data.get("webPages", {}).get("value", [])
-                snippet_data = extract_snippet_data(relevant_info_from_query, 9)
-                data_from_chatgpt_2 = get_data_from_chatgpt_2(snippet_data, field)
-                cleaned_result = re.sub(r'\\', '', data_from_chatgpt_2)
-                cleaned_result = re.sub(r'\n', '', cleaned_result)
-                cleaned_result = cleaned_result.strip('"')
-                all_data_from_chatgpt_2[field] = cleaned_result
+                if query_field in ['LinkedIn URL and followers', "Instagram UR and followers", "Tiktok URL and followers", "Facebook URL and followers", "Twitter(X) URL and followers"]:
+                    relevant_info_from_query = crawl_data.get("webPages", {}).get("value", [])
+                    snippet_data = extract_snippet_data(relevant_info_from_query, 3)
+                    url = crawl_data.get("webPages", {}).get("value", [])[0]["url"]
+                    snippet_data += f" The url is : {url}"
+                    data_from_chatgpt_2 = get_data_from_chatgpt_2(snippet_data, field)
+                    cleaned_result = re.sub(r'\\', '', data_from_chatgpt_2)
+                    cleaned_result = re.sub(r'\n', '', cleaned_result)
+                    cleaned_result = cleaned_result.strip('"')
+                    all_data_from_chatgpt_2[field] = cleaned_result
+                else:
+                    relevant_info_from_query = crawl_data.get("webPages", {}).get("value", [])
+                    snippet_data = extract_snippet_data(relevant_info_from_query, 9)
+                    data_from_chatgpt_2 = get_data_from_chatgpt_2(snippet_data, field)
+                    cleaned_result = re.sub(r'\\', '', data_from_chatgpt_2)
+                    cleaned_result = re.sub(r'\n', '', cleaned_result)
+                    cleaned_result = cleaned_result.strip('"')
+                    all_data_from_chatgpt_2[field] = cleaned_result
 
         return all_data_from_chatgpt_2
     except Exception as e:

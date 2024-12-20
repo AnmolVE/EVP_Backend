@@ -6,6 +6,7 @@ load_dotenv()
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ..models import (
+    DesignPrinciples,
     Company,
     TalentDataset,
     AttributesOfGreatPlace,
@@ -24,6 +25,7 @@ from ..models import (
 )
 
 from ..serializers import (
+    DesignPrinciplesSerializer,
     TalentDatasetSerializer,
     TalentInsightsSerializer,
     AttributesOfGreatPlaceSerializer,
@@ -188,11 +190,8 @@ def query_with_langchain(company_name):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
     text_chunks = text_splitter.split_documents(document_data)
     documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
-    ids=[f"id{i}" for i in range(len(documents))]
 
     embeddings = create_embeddings()
-
-    embedded_documents = embeddings([documents[i] for i in range(len(documents))])
 
     sanitized_company_name = re.sub(r'\s+', '_', company_name)
     client = chromadb.PersistentClient(path=f"vector_databases/{sanitized_company_name}")
@@ -201,6 +200,10 @@ def query_with_langchain(company_name):
         embedding_function=embeddings,
         metadata={"hnsw:space": "cosine"},
     )
+
+    current_count = collection.count()
+    ids = [f"id{current_count + i}" for i in range(len(documents))]
+    embedded_documents = embeddings([documents[i] for i in range(len(documents))])
 
     collection.add(
         embeddings=embedded_documents,
@@ -221,7 +224,6 @@ def query_with_langchain(company_name):
         prompt = f"""
         Information: {fetched_documents} \n \n Question: {query}.
         """
-        print(prompt)
 
         completion = chat_client.chat.completions.create(
         model=AZURE_OPENAI_DEPLOYMENT,
@@ -244,6 +246,7 @@ def query_with_langchain(company_name):
         )
         chat_response = completion.choices[0].message.content
         json_data[key] = chat_response
+        print(json_data)
     return json_data
 
     # def process_query(query):
@@ -261,6 +264,96 @@ def query_with_langchain(company_name):
     #         json_data[query] = cleaned_result
     
     # return json_data
+
+design_principles_questions = {
+    """question_1""":"""What are the strategic goals for the next 3-5 years?""",
+    """question_2""":"""Do you have an existing EVP? If so, what aspects of it are working well, and what areas need improvement?""",
+    """question_3""":"""What are the key attributes or messages that you want to convey through your EVP?""",
+    """question_4""":"""How would you describe your company culture?""",
+    """question_5""":"""What values are most important to your organization and its employees?""",
+    """question_6""":"""What challenges do you currently face in attracting and retaining top talent?""",
+    """question_7""":"""What are the key reasons employees stay at your company? What are the reasons they leave?""",
+    """question_8""":"""What talent segment(s) do you most want your EVP to target?""",
+    """question_9""":"""How do you differentiate your company's employee experience from competitors?""",
+    """question_10""":"""How do you currently measure employee satisfaction and engagement?""",
+    """question_11""":"""What channels do you use to communicate with employees and potential candidates?""",
+    """question_12""":"""How do you plan to measure the success and impact of the new EVP?""",
+    """question_13""":"""How do you believe your company is perceived by potential candidates in the market?""",
+    """question_14""":"""What are the key messages you want to convey to the market about working at your company?""",
+    """question_15""":"""What are your competitors doing in terms of EVP that you admire or want to differentiate from?""",
+}
+
+def get_design_principles(company_name):
+    loader = PyPDFLoader(r"media\final_pdf\merged_pdf.pdf")
+    document_data = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
+    text_chunks = text_splitter.split_documents(document_data)
+    documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
+
+    embeddings = create_embeddings()
+
+    sanitized_company_name = re.sub(r'\s+', '_', company_name)
+    client = chromadb.PersistentClient(path=f"vector_databases/{sanitized_company_name}")
+    collection = client.get_or_create_collection(
+        name="design_principles",
+        embedding_function=embeddings,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+    current_count = collection.count()
+    ids = [f"id{current_count + i}" for i in range(len(documents))]
+    embedded_documents = embeddings([documents[i] for i in range(len(documents))])
+
+    collection.add(
+        embeddings=embedded_documents,
+        documents=documents,
+        ids=ids,
+    )
+
+    json_data = {}
+    for key, question in design_principles_questions.items():
+        print(key)
+        query_results = collection.query(
+                query_texts=[question],
+                n_results=20,
+            )
+        fetched_documents = " ".join(query_results["documents"][0])
+
+        RESPONSE_JSON = {
+            key:question,
+        }
+
+        prompt = f"""
+                    First analyze the given information and returns the response in json format:
+
+                    Given Information : {fetched_documents}
+
+                    From the given information, fetch the data for below question
+                    question : {question}
+
+                    Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+                    Replace the question with the actual data and keys remains as it is.
+                """
+        
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
+        messages = [
+                {"role": "system", "content": f"You are an expert Research Analyst."},
+                {"role": "user", "content": prompt}
+            ],
+        temperature=0.1,
+        max_tokens=4000,
+        )
+        chat_response = completion.choices[0].message.content
+        try:
+            design_principles = json.loads(chat_response)
+            json_data[key] = design_principles[key]
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            json_data = {}
+    return json_data
 
 
 def save_pgData_to_vector_database(file_path, company_name):
@@ -622,35 +715,28 @@ def get_key_themes_from_chatgpt(company_name):
 
 audience_wise_messaging_query = {
 "Existing Employees":"""
-    What current employees working at the client company are saying about the company.
-    Create a summary from the data and then give me the response.
+    Create a short summary about what Existing Employees are saying about company. Only rely on given information or actual external mentions. Do not make up any facts or figures on your own. This is extremely important - DO NOT MAKE UP ANYTHING ON YOUR OWN.
 """,
 "Alumni":"""
-    What ex-employees who used to work at the client company are saying about the company.
-    Create a small summary.
+    Create a short summary about what Alumni are saying about company. Only rely on given information or actual external mentions. Do not make up any facts or figures on your own. This is extremely important - DO NOT MAKE UP ANYTHING ON YOUR OWN.
 """,
 "Targeted Talent":"""
-    What candidates and people who are not working at client company are saying about the client. Also include what these people are saying about what they look for in a desired employer.
-    Create a small summary. 
+    Create a short summary about what Targeted Talent are saying about company. Only rely on given information or actual external mentions. Do not make up any facts or figures on your own. This is extremely important - DO NOT MAKE UP ANYTHING ON YOUR OWN. 
 """,
 "Leadership":"""
-    What vice president and above who work at client company are saying about the client company.
-    Create a small summary.
+    Create a short summary about what Leadership are saying about company. Only rely on given information or actual external mentions. Do not make up any facts or figures on your own. This is extremely important - DO NOT MAKE UP ANYTHING ON YOUR OWN.
 """,
 "Recruiters":"""
-    What recruiters who currently hire talent for client are saying everybody thinks about the client.
-    Create a small summary.
+    Create a short summary about what Recruiters are saying about company. Only rely on given information or actual external mentions. Do not make up any facts or figures on your own. This is extremely important - DO NOT MAKE UP ANYTHING ON YOUR OWN.
 """,
 "Clients":"""
-    What clients of the client company are saying about the client company.
-    Create a small summary.
+    Create a short summary about what Clients are saying about company. Only rely on given information or actual external mentions. Do not make up any facts or figures on your own. This is extremely important - DO NOT MAKE UP ANYTHING ON YOUR OWN.
 """,
 "Offer Drops":"""
-    What people who did not accept client's offer are saying about client company.
-    Create a small summary and don't give generalized results.
+    Create a short summary about what people who interviewed but did not accept the offer to join are saying about company. Only rely on given information or actual external mentions. Do not make up any facts or figures on your own. This is extremely important - DO NOT MAKE UP ANYTHING ON YOUR OWN.
 """,
 "Exit Interview Feedback Summary": """
-                Find feedback from exited employees about the company. Use keywords like 'exit feedback,' 'leaving form,' or 'exit interview'. Provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarize the actual feedback. 
+                Create a short summary of what exiting employees said during their exit interviews. Remember, do no make anything up. Only summarise findings of that particular document. If no such document is found, please write "Information not found".
 """,
 "Employee Feedback Summary": """
                 Find feedback from current or former employees about the company. Use keywords like 'employee feedback,' 'staff opinions,' or 'employee reviews' or 'HR complaints'.  Provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarise the actual feedback.
@@ -659,7 +745,7 @@ audience_wise_messaging_query = {
                 Search for results from employee engagement surveys in the documents. Look for terms like 'engagement survey results,' 'employee satisfaction survey,' or 'engagement metrics.' or 'ESat survey' and provide a summary of how many employees are represented and the topics they have provided feedback on. Do not summarize the actual feedback.
 """,
 "Online Forums Mentions": """
-                Pull verbatim online mentions of the company name and  the feedback about the company as an employer. Use keywords like 'feedback,' 'opinions,' 'reviews,' and 'perception. Provide the names of forums and how many mentions considered.
+                Crawl the documents and identify any feedback specific to online forums only such as Glassdoor.com or Reddit.com. Then summarise those mentions in a short summary. Do not summarise anything other than mentions on online forums.
 """
 }
 
@@ -1245,24 +1331,12 @@ def get_regenerated_theme(company_name, user, theme_to_regenerate):
 def get_tagline(
         main_theme,
         combined_tabs_data,
-        pillars
+        pillar_1,
+        pillar_2,
+        pillar_3
 ):
-    supporting_pillars = ", ".join(pillars)
-    if len(pillars) > 0:
-        query = f"""
-                    Act like an advertising expert. Now create a narrative. A narrative is a combination of a Tagline and advertising body copy. The logic for the narrative is that the {main_theme} will become the main theme of that narrative. The remaining {supporting_pillars} become secondary or supporting pillars. 
-                    This is how the advertising copy of the narrative will flow. Don't write the subheads below, but follow the instructions.
-                    Start with a hook or an engaging statement that captures the reader's attention.
-                    Provide a clear and concise explanation of the main theme.
-                    Now link the main theme to the supporting themes.
-                    Use language that resonates emotionally with employees and potential employees, creating a connection.
-                    Emphasize what sets the company apart from competitors.
-                    End with a strong call to action, encouraging the audience to take the next step, such as joining the company.
-                    Don't include the name of the company in the taglines. But consider the industry of the company.
-                """
-    else:
-        query = f"""
-                    Act like an advertising expert. Now create a narrative. A narrative is a combination of a Tagline and advertising body copy. The logic for the narrative is that the {main_theme} will become the main theme of that narrative. 
+    query = f"""
+                    Act like an advertising expert. Now create a narrative. A narrative is a combination of a Tagline and advertising body copy. The logic for the narrative is that the {main_theme} will become the main theme of that narrative. The remaining pillars {pillar_1}, {pillar_2} and {pillar_3} become secondary or supporting pillars. 
                     This is how the advertising copy of the narrative will flow. Don't write the subheads below, but follow the instructions.
                     Start with a hook or an engaging statement that captures the reader's attention.
                     Provide a clear and concise explanation of the main theme.

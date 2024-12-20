@@ -263,6 +263,18 @@ class EVPStatementThemes(models.Model):
 
     def __str__(self):
         return f"{self.company.name} - EVPStatementThemes"
+    
+class EVPStatement(models.Model):
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    main_theme = models.TextField(null=True, blank=True)
+    pillar_1 = models.TextField(null=True, blank=True)
+    pillar_2 = models.TextField(null=True, blank=True)
+    pillar_3 = models.TextField(null=True, blank=True)
+    tagline = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company.name} - EVP Statement"
 
 class MessagingHierarchyTabs(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
