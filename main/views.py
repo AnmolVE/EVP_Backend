@@ -53,12 +53,16 @@ from .utils.langchaining import (
     save_data_to_vector_database,
     get_attributes_of_great_place_from_chatgpt,
     get_key_themes_from_chatgpt,
+    get_regenerated_themes,
     get_audience_wise_messaging_from_chatgpt,
     get_talent_insights_from_chatgpt,
     get_analysis_data_from_vector_chatgpt,
     get_alignment_data_from_vector_database,
     get_evp_statement_themes_from_chatgpt,
-    get_design_data_from_database, get_tagline,
+    get_regenerated_evp_statement_themes,
+    get_evp_statement,
+    get_regenerated_evp_statement,
+    get_design_data_from_database,
     get_regenerated_theme,
     get_creative_direction_from_chatgpt,
     get_evp_definition_from_chatgpt,
@@ -1121,12 +1125,15 @@ class KeyThemesAPIView(APIView):
         serializer = KeyThemesSerializer(created_key_themes, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class KeyThemesSpecificAPIView(APIView):
+class KeyThemesRegenerateAPIView(APIView):
     permission_classes = [IsAuthenticated]
     
-    def patch(self, request, company_name):
+    def patch(self, request, pk):
+        print(pk)
         data = request.data
         user = request.user
+
+        company_name = data.get("company_name")
 
         try:
             company = Company.objects.get(user=user, name=company_name)
@@ -1134,15 +1141,38 @@ class KeyThemesSpecificAPIView(APIView):
             return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            key_themes = KeyThemes.objects.get(user=user, company=company)
+            key_themes = KeyThemes.objects.filter(user=user, company=company)
+            serializer = KeyThemesSerializer(key_themes, many=True)
+            all_key_themes = serializer.data
         except KeyThemes.DoesNotExist:
             return Response({'error': 'Key Themes does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            key_theme = KeyThemes.objects.get(user=user, company=company, id=pk)
+            serializer = KeyThemesSerializer(key_theme)
+            theme_to_update = serializer.data
+        except KeyThemes.DoesNotExist:
+            return Response({"error": "Key Themes does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        regenerated_themes = get_regenerated_themes(company_name, all_key_themes, theme_to_update)
 
-        serializer = KeyThemesSerializer(key_themes, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        regenerated_theme_data = next(
+            (theme for theme in regenerated_themes if theme["id"] == pk), None
+        )
+
+        if not regenerated_theme_data:
+            return Response(
+                {"error": f"No regenerated data found for theme with ID {pk}"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        key_theme.key_theme = regenerated_theme_data.get("key_theme", key_theme.key_theme)
+        key_theme.key_theme_desc = regenerated_theme_data.get("key_theme_desc", key_theme.key_theme_desc)
+        key_theme.save()
+
+        new_key_themes = KeyThemes.objects.filter(user=user, company=company)
+        serializer = KeyThemesSerializer(new_key_themes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AudienceWiseMessagingAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1411,7 +1441,54 @@ class EVPStatementThemesAPIView(APIView):
         evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
         serializer = EVPStatementThemesSerializer(evp_statement_themes, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class RegenerateEVPStatementThemes(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def patch(self, request, pk):
+        data = request.data
+        user = request.user
+
+        company_name = data.get("company_name")
+
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
+            serializer = EVPStatementThemesSerializer(evp_statement_themes, many=True)
+            all_evp_statement_themes = serializer.data
+        except EVPStatementThemes.DoesNotExist:
+            return Response({'error': 'EVP Statement Themes does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_statement_theme = EVPStatementThemes.objects.get(user=user, company=company, id=pk)
+            serializer = EVPStatementThemesSerializer(evp_statement_theme)
+            evp_statement_theme_to_update = serializer.data
+        except EVPStatementThemes.DoesNotExist:
+            return Response({'error': 'EVP Statement Themes does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        regenerated_evp_statement_themes = get_regenerated_evp_statement_themes(company_name, user, all_evp_statement_themes, evp_statement_theme_to_update)
+        
+        regenerated_evp_statement_theme_data = next(
+            (theme for theme in regenerated_evp_statement_themes if theme["id"] == pk), None
+        )
+
+        if not regenerated_evp_statement_theme_data:
+            return Response(
+                {"error": f"No regenerated data found for theme with ID {pk}"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        evp_statement_theme.theme_name = regenerated_evp_statement_theme_data.get("theme_name", evp_statement_theme.theme_name)
+        evp_statement_theme.theme_desc = regenerated_evp_statement_theme_data.get("theme_desc", evp_statement_theme.theme_desc)
+        evp_statement_theme.save()
+
+        new_evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
+        serializer = EVPStatementThemesSerializer(new_evp_statement_themes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 class GenerateEVPStatementAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1422,7 +1499,6 @@ class GenerateEVPStatementAPIView(APIView):
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
-            print("failed")
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
         company_id = company.id
 
@@ -1430,39 +1506,67 @@ class GenerateEVPStatementAPIView(APIView):
         pillar_1 = request.data.get("pillar_1")
         pillar_2 = request.data.get("pillar_2")
         pillar_3 = request.data.get("pillar_3")
-        tagline = request.data.get("tagline")
 
         if EVPStatement.objects.filter(user=user, company=company_id).exists():
             existing_messaging_hierarchy_data = EVPStatement.objects.get(user=user, company=company_id)
             serializer = EVPStatementSerializer(existing_messaging_hierarchy_data)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        if tagline:
-            messaging_hierarchy_data = EVPStatement(
-                user=user,
-                company = company,
-                main_theme = main_theme,
-                pillar_1 = pillar_1,
-                pillar_2 = pillar_2,
-                pillar_3 = pillar_3,
-                tagline = tagline,
-            )
-            messaging_hierarchy_data.save()
-            serializer = EVPStatementSerializer(messaging_hierarchy_data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        else:
-            tabs_data_instances = EVPStatementThemes.objects.filter(user=user, company=company_id)
-            combined_tabs_data = " ".join(instance.theme_desc for instance in tabs_data_instances)
+        evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company_id)
+        evp_statement_themes_data = " ".join(instance.theme_desc for instance in evp_statement_themes)
 
-        tagline = get_tagline(
+        generated_evp_statement = get_evp_statement(
             main_theme,
-            combined_tabs_data,
+            evp_statement_themes_data,
             pillar_1,
             pillar_2,
             pillar_3
         )
-        return Response({"tagline": tagline})
+
+        evp_statement = EVPStatement.objects.create(
+            user=user,
+            company=company,
+            main_theme = main_theme,
+            pillar_1 = pillar_1,
+            pillar_2 = pillar_2,
+            pillar_3 = pillar_3,
+            tagline = generated_evp_statement.get("tagline", ""),
+            tagline_desc = generated_evp_statement.get("advertising_body_copy", "")
+        )
+
+        serializer = EVPStatementSerializer(evp_statement)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class RegenerateEVPStatement(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, company_name):
+        user = request.user
+
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
+        evp_statement_themes_data = " ".join(instance.theme_desc for instance in evp_statement_themes)
+
+        try:
+            evp_statement = EVPStatement.objects.get(user=user, company=company)
+            serializer = EVPStatementSerializer(evp_statement)
+            evp_statement_to_update = serializer.data
+        except EVPStatement.DoesNotExist:
+            return Response({"error": "EVP Statement does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        regenerated_evp_statement = get_regenerated_evp_statement(evp_statement_themes_data, evp_statement_to_update)
+
+        evp_statement.tagline = regenerated_evp_statement.get("tagline", "")
+        evp_statement.tagline_desc = regenerated_evp_statement.get("tagline_desc", "")
+        evp_statement.save()
+
+        new_evp_statement = EVPStatement.objects.get(user=user, company=company)
+        serializer = EVPStatementSerializer(new_evp_statement)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 class MessagingHierarchySpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]

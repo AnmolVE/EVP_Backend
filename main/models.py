@@ -272,6 +272,7 @@ class EVPStatement(models.Model):
     pillar_2 = models.TextField(null=True, blank=True)
     pillar_3 = models.TextField(null=True, blank=True)
     tagline = models.TextField(null=True, blank=True)
+    tagline_desc = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.company.name} - EVP Statement"

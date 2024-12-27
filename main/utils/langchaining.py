@@ -712,6 +712,77 @@ def get_key_themes_from_chatgpt(company_name):
             print(f"Failed to parse JSON response: {e}")
             key_themes = {}
         return key_themes
+    
+def get_regenerated_themes(company_name, all_key_themes, theme_to_update):
+    embeddings = create_embeddings()
+    sanitized_company_name = re.sub(r'\s+', '_', company_name)
+    persistent_directory = f"vector_databases/{sanitized_company_name}"
+    if os.path.exists(os.path.join(persistent_directory)):
+        chroma_client = chromadb.PersistentClient(path=persistent_directory)
+        develop_collection = chroma_client.get_collection(
+            name="test",
+            embedding_function=embeddings,
+        )
+    print("In Key Themes")
+
+    key_themes = {}
+    for key, query in key_themes_query.items():
+        print(key)
+
+        query_results = develop_collection.query(
+                query_texts=[query],
+                n_results=10,
+            )
+        fetched_documents = " ".join(query_results["documents"][0])
+
+        RESPONSE_JSON = {
+            "regenerated_themes": all_key_themes
+        }
+
+        prompt = f"""
+        First analyze the given information below and return the response in json format:
+
+        Given Information: {fetched_documents}
+
+        My client does not like below theme and wants to get "key_theme" and "key_theme_desc" in below data so that they should not even similar to previous one.
+        Don't delete the below object just update the values of "key_theme" and "key_theme_desc" in below data.
+        Theme: {theme_to_update}
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Update the data of regenerated theme and let other themes data as it is.
+
+        The number of entries should not exceed the available data.
+        """
+
+        print(prompt)
+        print("*************************************************************************************************************")
+
+        completion = chat_client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        response_format={ "type": "json_object" },
+        messages = [
+            {
+                "role":"system",
+                "content":"""You are a helpful expert research assistant.
+                            """
+            },
+            {
+                "role":"user",
+                "content":prompt
+            }
+        ],
+        temperature=0,
+        max_tokens=4000,
+        )
+        chat_response = completion.choices[0].message.content
+        try:
+            key_themes = json.loads(chat_response)
+            key_themes = key_themes["regenerated_themes"]
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            key_themes = {}
+        return key_themes
+
 
 audience_wise_messaging_query = {
 "Existing Employees":"""
@@ -1191,6 +1262,70 @@ def get_evp_statement_themes_from_chatgpt(company_name, user):
 
     return json_response
 
+def get_regenerated_evp_statement_themes(company_name, user, all_evp_statement_themes, evp_statement_theme_to_update):
+    company = Company.objects.get(user=user, name=company_name)
+    company_id = company.id
+
+    analysis_vector = SwotAnalysis.objects.get(user=user, company=company_id)
+    analysis_vector_serializer = SwotAnalysisSerializer(analysis_vector)
+
+    alignment_vector = Alignment.objects.filter(user=user, company=company_id)
+    alignment_vector_serializer = AlignmentSerializer(alignment_vector, many=True)
+
+    whole_data = {
+        "analysis_vector": analysis_vector_serializer.data,
+        "alignment_vector": alignment_vector_serializer.data,
+    }
+
+    formatted_string = json.dumps(whole_data)
+    
+    RESPONSE_JSON = {
+        "regenerated_themes": all_evp_statement_themes
+    }
+
+    prompt = f"""First analyze the given information completely and return the response in json format
+
+        Given Information: {formatted_string}.
+
+        By using the above given information, do the following
+
+        My client does not like below theme and wants to get "theme_name" and "theme_desc" in below data so that they should not even similar to previous one.
+        Don't delete the below object just update the values of "theme_name" and "theme_desc" in below data.
+        Theme: {evp_statement_theme_to_update}
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Update the data of regenerated theme and let other themes data as it is.
+
+        The number of entries should not exceed the available data.
+        """
+
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are a helpful expert research assistant.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+        json_response = json_response["regenerated_themes"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+
+    return json_response
+
 def get_design_data_from_database(company_name, user):
     company = Company.objects.get(user=user, name=company_name)
     company_id = company.id
@@ -1328,15 +1463,15 @@ def get_regenerated_theme(company_name, user, theme_to_regenerate):
 
     return json_response
 
-def get_tagline(
+def get_evp_statement(
         main_theme,
-        combined_tabs_data,
+        evp_statement_themes_data,
         pillar_1,
         pillar_2,
         pillar_3
 ):
     query = f"""
-                    Act like an advertising expert. Now create a narrative. A narrative is a combination of a Tagline and advertising body copy. The logic for the narrative is that the {main_theme} will become the main theme of that narrative. The remaining pillars {pillar_1}, {pillar_2} and {pillar_3} become secondary or supporting pillars. 
+                    Act like an advertising expert. Now create a narrative. A narrative is a combination of a Tagline and advertising body copy. The logic for the narrative is that the {main_theme} will become the main theme of that narrative. The remaining themes {pillar_1}, {pillar_2} and {pillar_3} become secondary or supporting themes. 
                     This is how the advertising copy of the narrative will flow. Don't write the subheads below, but follow the instructions.
                     Start with a hook or an engaging statement that captures the reader's attention.
                     Provide a clear and concise explanation of the main theme.
@@ -1347,22 +1482,75 @@ def get_tagline(
                     Don't include the name of the company in the taglines. But consider the industry of the company.
                 """
     
-    prompt = f"""
-        Information: {combined_tabs_data}
+    RESPONSE_JSON = {
+        "evp_statement": {
+            "tagline": "value",
+            "advertising_body_copy": "",
+        }
+    }
+    
+    prompt = f"""First analyze the given information below and returns the response in json format
+        Given Information: {evp_statement_themes_data}
 
-        Analyze the complete information above.
         After analyzing it, give the response regarding below query.
          
-         Query: {query}.
+        Query: {query}.
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Add actual data as the value of keys and let keys as it as.
         """
 
     completion = chat_client.chat.completions.create(
     model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
+    messages = [
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+        json_response = json_response["evp_statement"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+
+    return json_response
+
+def get_regenerated_evp_statement(evp_statement_themes_data, evp_statement_to_update):
+
+    RESPONSE_JSON = {
+        "evp_statement": evp_statement_to_update
+    }
+
+    prompt = f"""First analyze the given information completely and return the response in json format
+
+        Given Information: {evp_statement_themes_data}.
+
+        By using the above given information, do the following
+
+        My client does not like below statement and wants to get new "tagline" and "tagline_desc" in below data so that they should not even similar to previous one.
+        Don't delete the below object just update the values of "tagline" and "tagline_desc" in below data and let other fields as it is
+        Statement: {evp_statement_to_update}
+
+        Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+        Update the data of regenerated theme and let other themes data as it is.
+
+        The number of entries should not exceed the available data.
+        """
+
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
     messages = [
         {
             "role":"system",
-            "content":"""You are a helpful expert research assistant. You will be shown the given information.
-                            After analyzing the complete information, your task is to answer the question using only given information.
+            "content":"""You are a helpful expert research assistant.
                         """
         },
         {
@@ -1374,7 +1562,14 @@ def get_tagline(
     max_tokens=4000,
     )
     chat_response = completion.choices[0].message.content
-    return chat_response
+    try:
+        json_response = json.loads(chat_response)
+        json_response = json_response["evp_statement"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
+
+    return json_response
 
 def get_creative_direction_from_chatgpt(brand_guidelines, tagline):
 

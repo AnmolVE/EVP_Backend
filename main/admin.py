@@ -106,15 +106,15 @@ class EVPStatementThemesAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "theme_name", "theme_desc"]
     list_filter = ["company"]
 
+class EVPStatementAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "main_theme", "pillar_1", "pillar_2", "pillar_3", "tagline", "tagline_desc"]
+    list_filter = ["company"]
+
 class MessagingHierarchyTabsAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "tab_name", "tabs_data"]
     list_filter = ["company"]
 
 class MessagingHierarchyDataAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "company", "main_theme", "pillar_1", "pillar_2", "pillar_3", "tagline"]
-    list_filter = ["company"]
-
-class EVPStatementAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "main_theme", "pillar_1", "pillar_2", "pillar_3", "tagline"]
     list_filter = ["company"]
 
