@@ -1,5 +1,3 @@
-# **Important point** : If you don't find the information for any key from the text then just leave it blank string don't add any text just leave it blank.
-
 import os
 import json
 import re

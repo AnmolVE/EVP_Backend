@@ -1836,87 +1836,217 @@ def get_evp_audit_from_chatgpt(company_name, user, analysis_data, alignment_data
     return serializer.data
 
 all_touchpoint_prompts = {
-"Careers Website": """Create content for the Careers section of our website that highlights our company culture, benefits, and career growth opportunities. Include testimonials from current employees and visuals of our work environment.
+"Social Media Ads": """Create a compelling social media ad campaign that highlights the key pillars of our Employee Value Proposition (EVP). The campaign should target potential candidates at the pre-hire stage, emphasizing [insert specific EVP attributes from the design section]. Include a catchy headline, engaging visuals (described), and a clear call-to-action for candidates to learn more or apply.
 """,
-"LinkedIn": """Draft a LinkedIn post to attract potential candidates. Include a call-to-action for interested candidates to visit our careers page
+"EVP Blog Post": """Write a detailed blog post that showcases our company's unique Employee Value Proposition (EVP). The post should be engaging, informative, and reflect our brand's voice. Focus on [insert specific EVP elements], and explain how these translate into real benefits for potential employees. Provide a strong conclusion that encourages readers to explore job opportunities with us.
 """,
-"Instagram": """Design an Instagram post showcasing a day in the life at our company.  a caption that highlights the fun and collaborative work environment.
+"EVP Brochure": """Develop a visually appealing brochure that outlines our Employee Value Proposition (EVP) for prospective candidates. The brochure should cover the core pillars of our EVP, including [insert EVP details], and should include testimonials, benefits, and a clear overview of what makes us stand out as an employer. Ensure the design is aligned with our brand identity.
 """,
-"Facebook": """Generate a Facebook post announcing our open positions and the benefits of working with us. Include a link to the job application page and encourage followers to share the post.
+"EVP Infographic": """Design an infographic that succinctly summarizes our Employee Value Proposition (EVP). The infographic should be visually engaging and easy to understand, highlighting the key benefits and unique aspects of working with our company. Focus on [insert EVP details], and ensure the design is optimized for sharing on social media and in recruitment materials.
 """,
-"Tiktok": """Write a video script for TikTok post. The video should be engaging and fun, encouraging viewers to apply for open positions.
+"Outreach Letter to Talent": """Craft a personalized outreach letter aimed at top talent in our industry. The letter should introduce our company, emphasize our Employee Value Proposition (EVP), and explain why we believe the recipient would be a great fit. Include specific EVP attributes that align with the recipient's background or interests, and invite them to discuss potential opportunities.
 """,
-"Twitter X": """Compose a tweet to announce job openings at our company. Highlight key benefits and provide a link to the application page. Use relevant hashtags to increase visibility.
+"Culture Video": """Create a script for a culture video that highlights our company’s work environment, values, and Employee Value Proposition (EVP). The video should tell a story that resonates with prospective candidates, showcasing [insert specific aspects of EVP] through employee interviews, office scenes, and examples of company culture in action. Include ideas for visuals and narration.
 """,
-"Job Board": """Create a job board posting that details the responsibilities, requirements, and benefits of the open position. Make sure to include information about our company culture and growth opportunities
+"Candidate Feedback Survey": """Develop a candidate feedback survey tailored to those who have interacted with our company during the pre-hire stage. The survey should focus on assessing their experience with our recruitment process, particularly how well our Employee Value Proposition (EVP) was communicated. Include questions that capture both quantitative and qualitative feedback.
 """,
-"Job Description": """Write a detailed job description for the open position, including responsibilities, required skills, and qualifications. Highlight opportunities for career growth and development.
+"Employee Testimonial Format": """Design a format for collecting and sharing employee testimonials that emphasize our Employee Value Proposition (EVP). The format should guide employees to share their experiences in a way that highlights [insert specific EVP attributes], and it should be versatile enough to be used in blog posts, videos, or social media content.
 """,
-"Job Ad": """Generate a job ad that will catch the attention of potential candidates. Focus on the benefits of working at our company and include a clear call-to-action for applying.
+"Referral Letter": """Compose a referral letter template that employees can use to recommend our company to potential candidates. The letter should include an overview of our Employee Value Proposition (EVP), particularly focusing on [insert key EVP points], and explain why the company is a great place to work. Include a section for personal anecdotes or reasons the referrer believes the candidate would be a good fit.
 """,
-"Referral Email": """Draft an email template for employees to refer candidates for open positions. Include information about the referral program and the benefits of working at our company.
+"Webinar - Get to Know Us": """Create an outline for a 'Get to Know Us' webinar aimed at potential candidates. The webinar should introduce our company, walk through our Employee Value Proposition (EVP), and include segments that cover [insert specific EVP topics]. Plan for interactive elements like Q&A, polls, and a virtual tour to engage participants.
 """,
-"Event Toolkit": """Create a toolkit for hiring events that includes promotional materials, banners, flyers, and information packets about our company and open positions.
+"Career Fair": """Develop a plan for our presence at a career fair that highlights our Employee Value Proposition (EVP). The plan should include ideas for booth design, marketing materials, and talking points that focus on [insert specific EVP elements]. Ensure that our EVP is clearly communicated in all interactions and materials, with a focus on attracting top talent.
 """,
-"Interview Talking Points": """Generate a list of talking points for interviewers to use during candidate interviews. Include key information about the company, role expectations, and career growth opportunities.
+"Skills Assessment Quiz": """Create a skills assessment quiz that can be used to evaluate potential candidates during the pre-hire stage. The quiz should be aligned with the core skills required for our open positions and should subtly incorporate elements of our Employee Value Proposition (EVP), such as questions that reflect our values or culture. Include a scoring guide that helps identify candidates who align with our EVP.
 """,
-"Application Form": """Design a user-friendly job application form that captures essential candidate information while providing a seamless application experience.
+"Interview Process Overview Document": """Develop a document that outlines the entire interview process for candidates, from initial screening to final interviews. This document should clearly communicate what candidates can expect at each stage and how the process aligns with our Employee Value Proposition (EVP). Include sections that highlight our commitment to [insert EVP elements], such as transparency, candidate care, and fair evaluation.
 """,
-"Offer Letter": """Draft a template for offer letters to be sent to successful candidates. Ensure it includes details about the role, compensation, benefits, and start date.
+"Case Study Assignment": """Design a case study assignment that candidates can complete as part of the hiring process. The case study should be relevant to the role and include scenarios that reflect our Employee Value Proposition (EVP). Focus on challenges that highlight [insert specific EVP attributes], such as innovation, problem-solving, or teamwork, and provide clear instructions and expectations.
 """,
-"Welcome Email": """Create a welcome email template for new employees. The email should express enthusiasm, provide essential information about their first day, and include links to resources like the employee handbook.
+"Candidate Preparation Guide": """Create a preparation guide for candidates to help them get ready for their interviews. The guide should include tips on what to expect, how to prepare, and insights into our company culture and Employee Value Proposition (EVP). Emphasize how [insert EVP elements] are reflected in our interview process, and provide resources that will help candidates feel confident and well-prepared.
 """,
-"Employee Handbook": """Develop an employee handbook that outlines company policies, procedures, and culture. Include sections on benefits, code of conduct, and employee resources.
+"Offer Stage Communication Plan": """Develop a communication plan template for the offer stage that hiring managers can use to ensure consistent and engaging communication with candidates. The plan should outline key touchpoints, messages, and timing, with a focus on reinforcing our Employee Value Proposition (EVP). Include strategies for addressing candidate concerns and emphasizing [insert EVP points] as reasons to accept the offer.
 """,
-"Merchandise": """Generate ideas for onboarding merchandise, such as branded t-shirts, mugs, and notebooks, that new employees can receive on their first day.
+"Candidate Journey Map": """Design a candidate journey map that visually represents the hiring process from the candidate's perspective. The map should highlight each stage of the process, key interactions, and how our Employee Value Proposition (EVP) is communicated at each step. Use the journey map to identify areas where we can enhance the candidate experience and better align with [insert EVP elements].
 """,
-"Orientation Deck": """Design an orientation presentation deck that introduces new employees to the company's mission, values, and key personnel. Include information about company history and future goals.
+"Hiring Manager Toolkit": """Create a comprehensive toolkit for hiring managers to use during the hiring process. The toolkit should include resources, templates, and best practices that align with our Employee Value Proposition (EVP). Focus on helping hiring managers effectively communicate [insert specific EVP attributes] to candidates, conduct interviews, evaluate candidates, and make decisions that support our overall talent strategy.
 """,
-"Email Template": """Create an internal email template for company-wide announcements and updates. Ensure it is visually appealing and easy to read, with space for images and important links
+"Job Description": """Develop a detailed job description template that is tailored to attract high-quality candidates. The job description should include a compelling overview of the role, key responsibilities, required qualifications, and benefits. Most importantly, it should prominently feature our Employee Value Proposition (EVP) to convey what makes our company unique as an employer. Include specific EVP elements such as [insert key EVP attributes] that align with the role, and ensure the tone and language reflect our company culture and values. The job description should not only inform but also inspire potential candidates to apply.
 """,
-"PPT Template": """Design a PowerPoint template for internal presentations. The template should be branded with the company logo and colors, and include slide layouts for various types of content.
+"Offer Letter": """Craft a personalized offer letter template that communicates our excitement to have the candidate join our team. The letter should include key details about the role and compensation, and it should reinforce our Employee Value Proposition (EVP), particularly focusing on [insert specific EVP elements]. Include a welcoming tone and a section that highlights the next steps in the onboarding process.
 """,
-"Living the EVP Module": """Develop a training module that helps employees understand and live the Employee Value Proposition (EVP). Include interactive elements, real-life examples, and exercises that reinforce the company’s values and culture
+"Onboarding Guide": """Create an onboarding guide for new hires that introduces them to our company, culture, and Employee Value Proposition (EVP). The guide should be comprehensive yet easy to navigate, covering essential information such as company policies, team introductions, and an overview of [insert EVP details]. Include a warm welcome message and tips for making the most of their first few weeks.
 """,
-"Goal Setting": """Create a goal-setting template for employees to outline their objectives and key results (OKRs). Ensure it includes sections for personal development and alignment with company goals.
+"Welcome Video": """Write a script for a welcome video that will be shown to new hires on their first day. The video should feature messages from key leaders and team members, and it should emphasize our Employee Value Proposition (EVP). Focus on creating a positive, inclusive atmosphere and include specific EVP attributes that align with the candidate's role.
 """,
-"Feedback Mechanism": """Develop a feedback mechanism that allows employees to provide and receive constructive feedback. Include templates for 360-degree feedback, performance reviews, and peer feedback.
+"Role-Specific Training Modules": """Develop content for role-specific training modules that new hires will complete during their onboarding process. The modules should include practical training relevant to their position, while also incorporating elements of our Employee Value Proposition (EVP), such as [insert specific EVP aspects] that relate to career growth, culture, or company values.
 """,
-"Posters": """Design posters that reflect the company's values and culture to be displayed around the office. Ensure they are visually appealing and motivational.
+"Team Introduction Deck": """Design a PowerPoint deck for introducing new hires to their immediate team. The deck should include profiles of team members, their roles, and how they contribute to the company. Ensure that the content reflects our Employee Value Proposition (EVP), particularly in areas such as collaboration, innovation, and support. Include an icebreaker section to make the introduction more engaging.
 """,
-"Wall Branding": """Create wall branding ideas that incorporate the company's logo, colors, and mission statement. Focus on areas like the lobby, meeting rooms, and common areas
+"Company Handbook": """Create a company handbook that provides new hires with a comprehensive overview of our policies, procedures, and culture. The handbook should be aligned with our Employee Value Proposition (EVP) and include sections on [insert specific EVP topics], such as our commitment to diversity, professional development opportunities, and work-life balance. Ensure the tone is welcoming and inclusive.
 """,
-"Breakout Areas": """Provide design concepts for breakout areas that encourage relaxation and collaboration. Include furniture suggestions and layout ideas.
+"First 90 Days Plan": """Develop a 'First 90 Days' plan template that managers can customize for new hires. The plan should include specific goals, key milestones, and regular feedback intervals, all aligned with our Employee Value Proposition (EVP). Include tips for success, resources for support, and a focus on integrating the new hire into the company culture.
 """,
-"Overall Layout": """Develop a floor plan layout that maximizes space efficiency and fosters a productive work environment. Consider incorporating open-plan areas, private workstations, and collaboration zones.
+"Welcome Kit Content": """Design the content for a welcome kit that new hires receive on their first day. The kit should include branded materials, a personal welcome note, and resources that reflect our Employee Value Proposition (EVP). Focus on creating a memorable and positive first impression that aligns with [insert specific EVP aspects].
 """,
-"Increment Letter": """Draft a template for increment letters that inform employees about their salary increases. Include details about the new compensation, effective date, and reasons for the increase.
+"Onboarding Survey": """Develop an onboarding survey to be sent to new hires after their first week or month. The survey should assess their initial experience, how well the onboarding process communicated our Employee Value Proposition (EVP), and areas for improvement. Include questions that capture both quantitative and qualitative feedback.
 """,
-"Promotion Letter": """Create a promotion letter template to congratulate employees on their new role. Include information about the new position, responsibilities, and any changes in compensation.
+"Buddy Program Overview": """Create an overview document for a buddy program designed to help new hires acclimate to the company. The document should outline the role of the buddy, key activities to encourage integration, and a check-in schedule. Emphasize how this program aligns with our Employee Value Proposition (EVP), particularly in fostering a supportive and inclusive work environment.
 """,
-"Correction Letter": """Generate a template for correction letters to address any discrepancies or changes in employee compensation. Ensure it is clear and professional.
+"Onboarding Checklist": """Develop an onboarding checklist that new hires can use to ensure they complete all necessary tasks during their first weeks. The checklist should include key tasks, important dates, and required documents. Align the checklist with our Employee Value Proposition (EVP) by including reminders of cultural integration activities and support resources.
 """,
-"Reward and Recognition Program": """Develop a reward and recognition program that outlines how employees can be acknowledged for their achievements. Include guidelines for nominations, selection criteria, and types of rewards.
+"New Hire Announcement Template": """Design a template for new hire announcements that managers can use to introduce new employees to the broader team. The announcement should include the new hire's name, position, background, and a fun fact. Ensure that the tone of the announcement reflects our Employee Value Proposition (EVP), particularly in creating a welcoming and inclusive atmosphere.
 """,
-"Employee Survey": """Design an employee engagement survey to gather feedback on various aspects of the workplace, including satisfaction, culture, and areas for improvement.
+"L&D Success Stories, Career Growth Blogs": """Write a blog post that highlights an employee’s success story and career growth within our company. The post should detail key achievements, career milestones, and how our Learning & Development (L&D) programs contributed to their success. Embed our Employee Value Proposition (EVP) by emphasizing the company’s commitment to employee growth and development.
 """,
-"Engagement Activity Calendar": """Create a calendar of employee engagement activities, including team-building events, social gatherings, and professional development opportunities.
+"L&D Program Brochures": """Create a brochure for our L&D program focused on [insert specific topic]. The brochure should include the program’s objectives, content overview, duration, and key benefits for participants. Ensure that our Employee Value Proposition (EVP) is reflected by highlighting how the program aligns with career growth and continuous learning.
 """,
-"Exit Interview": """Develop an exit interview template to gather feedback from departing employees. Include questions about their experiences, reasons for leaving, and suggestions for improvement.
+"L&D Pathway Infographics": """Design an infographic that visually represents the learning pathway for [insert specific skill/competency]. The infographic should outline key milestones, the sequence of learning activities, and how the pathway supports career development. Reflect our Employee Value Proposition (EVP) by emphasizing the benefits of continuous learning and progression.
 """,
-"Exit Process": """Create a detailed exit process checklist to ensure a smooth transition for departing employees. Include steps for returning company property, finalizing paperwork, and conducting exit interviews.
+"L&D Program Invitations, Training Notifications": """Create an invitation or notification for an upcoming L&D program or training session. The communication should include event details, the target audience, and the key benefits of attending. Embed our Employee Value Proposition (EVP) by highlighting how the program or training session supports employee growth and aligns with our commitment to continuous development.
 """,
-"Farewell Communication Template": """Generate a template for farewell communications to announce an employee's departure. Ensure it is respectful and expresses gratitude for their contributions.
-"""
+"L&D Program Videos, Mentorship Intro Videos": """Develop a video for our L&D program or an introduction to our mentorship program. The video should include key messages about the program’s benefits, feature employees or mentors, and maintain a visually engaging style. Reflect our Employee Value Proposition (EVP) by emphasizing how the program supports career development and fosters a learning culture.
+""",
+"Training Effectiveness Surveys": """Create a survey to assess the effectiveness of a recent training session. The survey should include questions about the quality of content, delivery, and overall experience. Ensure that the survey reflects our Employee Value Proposition (EVP) by asking how well the training met their development needs and aligned with their career goals.
+""",
+"Leadership Development Guides": """Create a guide for our leadership development program that focuses on [insert specific leadership skills]. The guide should include the program’s objectives, target audience, key competencies to develop, and preferred delivery method. Ensure that the guide aligns with our Employee Value Proposition (EVP), particularly in fostering leadership, innovation, and strategic thinking.
+""",
+"Recognition Posts, L&D Highlights": """Draft a recognition post or highlight that celebrates employee achievements or the success of an L&D program. The content should include details of the achievement or program, key takeaways, and maintain a tone that reflects our company culture. Embed our Employee Value Proposition (EVP) by emphasizing how these accomplishments align with our commitment to employee development and recognition.
+""",
+"L&D Program Newsletters": """Create a newsletter focused on Learning & Development (L&D) updates. The newsletter should highlight key topics, feature upcoming programs and events, and share success stories. Ensure the content reflects our Employee Value Proposition (EVP), particularly in promoting a culture of continuous learning and career development.
+""",
+"L&D Webinars, Leadership Development Workshops": """Create an invitation or content outline for an upcoming L&D webinar or leadership development workshop. The content should include event details, key speakers, and the benefits of attending. Incorporate our Employee Value Proposition (EVP) by highlighting how participating in the event will contribute to the employee’s professional development and align with our company’s values.
+""",
+"L&D Quizzes, Gamified Training Modules": """Develop a quiz or gamified training module that helps employees learn [insert specific skill/competency]. The content should include key learning objectives, cover important material, and be designed in an engaging, interactive format. Reflect our Employee Value Proposition (EVP) by emphasizing how the activity supports continuous learning and skill development in a fun and motivating way.
+""",
+"Increment Letter": """Draft an increment letter that communicates an employee’s salary increase. The letter should include the employee’s name, current position, new salary, and the effective date. Embed our Employee Value Proposition (EVP) by emphasizing how the increment reflects the company’s commitment to recognizing and rewarding high performance, and align it with career growth opportunities.
+""",
+"Promotion Letter": """Create a promotion letter that congratulates an employee on their new role. The letter should detail the employee’s current and new positions, new responsibilities, and any associated salary changes. Reflect our Employee Value Proposition (EVP) by highlighting how the promotion aligns with our commitment to career growth, professional development, and rewarding excellence.
+""",
+"Periodic Benefits Communication": """Compose a periodic communication that informs employees about the benefits available to them, including any upcoming enrollment periods or changes. The communication should include details about health insurance, retirement plans, and other benefits. Embed our Employee Value Proposition (EVP) by emphasizing how these benefits support employee well-being, financial security, and work-life balance.
+""",
+"Total Rewards Statement": """Develop a total rewards statement that provides a comprehensive overview of an employee’s compensation package. The statement should include salary details, benefits, bonuses, and any non-monetary rewards. Reflect our Employee Value Proposition (EVP) by showing how the total rewards package aligns with the company’s commitment to holistic employee well-being and recognition.
+""",
+"Annual Compensation Review Communication": """Create an annual communication that explains the company’s compensation review process and any changes for the year. The communication should provide a summary of company performance, the overall compensation strategy, and how these changes impact employees. Embed our Employee Value Proposition (EVP) by emphasizing the company’s commitment to fair compensation and aligning rewards with business success.
+""",
+"Benefits Enrollment Guide": """Design a guide for employees to help them navigate the benefits enrollment process. The guide should include detailed descriptions of available benefits, instructions for enrollment, eligibility criteria, and key deadlines. Ensure that the guide reflects our Employee Value Proposition (EVP) by highlighting how the benefits support employee health, financial security, and overall well-being.
+""",
+"Bonuses and Incentives Announcement": """Compose an announcement regarding bonuses and incentives for employees. The communication should outline the criteria for earning bonuses, relevant performance metrics, the payout timeline, and any tax implications. Reflect our Employee Value Proposition (EVP) by connecting these rewards to the company’s recognition of employee contributions and their alignment with business goals.
+""",
+"Recognition and Reward Program Communication": """Draft a communication that introduces or updates employees on the company’s recognition and reward program. The content should include program details, eligibility criteria, available reward options, and key dates. Embed our Employee Value Proposition (EVP) by emphasizing how the program aligns with our values of recognizing and celebrating employee achievements and contributions.
+""",
+"Promotion Criteria and Pathways Communication": """Create a communication that explains the criteria for promotion and the available career pathways within the company. The content should include detailed criteria, examples of potential career paths, and resources available to support employee development. Reflect our Employee Value Proposition (EVP) by highlighting how the company supports career growth and provides clear opportunities for advancement.
+""",
+"Compensation FAQs Document": """Develop a Frequently Asked Questions (FAQs) document that addresses common employee inquiries related to compensation and benefits. The document should provide clear, concise answers and include additional resources for further assistance. Ensure the document reflects our Employee Value Proposition (EVP) by focusing on transparency, fairness, and the company’s commitment to supporting employee financial well-being.
+""",
+"Retirement Benefits Overview": """Create an overview document that explains the retirement benefits available to employees. The document should detail the different retirement plan options, contribution details, any company matching programs, and instructions for enrollment. Embed our Employee Value Proposition (EVP) by emphasizing how these benefits support long-term financial security and align with the company’s commitment to employee well-being.
+""",
+"Health and Wellness Program Communication": """Draft a communication that informs employees about the company’s health and wellness programs. The content should include details about available programs, how employees can participate, the benefits of participation, and the enrollment process. Reflect our Employee Value Proposition (EVP) by highlighting how these programs contribute to employee health, work-life balance, and overall well-being.
+""",
+"Company-Wide Announcements": """Create a company-wide announcement that communicates [insert key message]. The announcement should clearly convey the important information, specify the target audience, and include any relevant resources or links. Embed our Employee Value Proposition (EVP) by highlighting how the announcement aligns with our company’s values and impacts employees.
+""",
+"Quarterly Newsletters": """Draft a quarterly newsletter that provides updates on company achievements, upcoming events, and other important information. The newsletter should also include employee spotlights and key dates to remember. Reflect our Employee Value Proposition (EVP) by emphasizing our commitment to transparency, employee recognition, and fostering a connected workplace.
+""",
+"Leadership Communication Emails": """Compose an email from company leadership that communicates [insert key message]. The email should provide context or background for the message, and outline any next steps or action items for employees. Embed our Employee Value Proposition (EVP) by aligning the message with our company’s vision, goals, and commitment to employee engagement.
+""",
+"Crisis Communication Plan": """Develop a crisis communication plan that outlines how to manage and communicate during [insert specific crisis scenario]. The plan should include details on key stakeholders, communication channels, and response steps. Ensure the plan reflects our Employee Value Proposition (EVP) by emphasizing the company’s commitment to transparency, employee safety, and support during challenging times.
+""",
+"Internal Survey Invitations": """Create an invitation for employees to participate in [insert specific internal survey]. The invitation should explain the purpose of the survey, key areas of focus, and include a link to the survey. Embed our Employee Value Proposition (EVP) by highlighting the importance of employee feedback and how it will be used to improve the workplace.
+""",
+"Employee Town Hall Invitations and Agendas": """Draft an invitation and agenda for an upcoming employee town hall. The invitation should include the town hall’s objectives, key topics to be covered, featured speakers, and details about the Q&A session. Reflect our Employee Value Proposition (EVP) by emphasizing the company’s commitment to open communication, transparency, and employee engagement.
+""",
+"Policy Update Communications": """Compose a communication that informs employees about [insert specific policy change]. The communication should detail the changes, the effective date, and how it impacts employees. Ensure that the message reflects our Employee Value Proposition (EVP) by aligning the policy update with our commitment to fairness, compliance, and employee support.
+""",
+"Employee Recognition Communications": """Draft a communication that recognizes an employee or team for their achievements. The message should detail the achievements, include a personalized recognition message, and outline any next steps (e.g., a celebratory event). Embed our Employee Value Proposition (EVP) by highlighting how the recognition aligns with our values of excellence, teamwork, and employee appreciation.
+""",
+"Diversity and Inclusion (D&I) Updates": """Create an update on the company’s Diversity and Inclusion (D&I) efforts. The communication should highlight recent initiatives, upcoming events, key achievements, and opportunities for employee participation. Reflect our Employee Value Proposition (EVP) by emphasizing the company’s commitment to fostering an inclusive, diverse, and supportive work environment.
+""",
+"Employee Feedback Response Communications": """Compose a communication that responds to employee feedback collected through [insert specific feedback mechanism]. The message should summarize the feedback, outline the actions taken or planned, and provide a timeline for implementation. Ensure the communication aligns with our Employee Value Proposition (EVP) by showing how employee voices are valued and acted upon.
+""",
+"Internal Campaign Announcements": """Develop an announcement for an internal campaign focused on [insert specific objective, e.g., health and wellness, sustainability]. The announcement should include the campaign’s objectives, key messages, timeline, and details on how employees can participate. Embed our Employee Value Proposition (EVP) by aligning the campaign with our company’s values and employee engagement goals.
+""",
+"Internal Event Invitations (e.g., Team Building, Celebrations)": """Create an invitation for an internal event such as a team-building activity or celebration. The invitation should include event details, the purpose of the event, and any special notes (e.g., attire, RSVP instructions). Reflect our Employee Value Proposition (EVP) by emphasizing how the event supports a positive workplace culture, employee connection, and company values.
+""",
+"Engagement Tips, Recognition Program Highlights": """Create a document that shares practical engagement tips and highlights key aspects of our recognition program. Include success stories that demonstrate the program’s impact. Reflect our Employee Value Proposition (EVP) by emphasizing how these strategies align with our commitment to fostering a positive and motivating workplace.
+""",
+"Wellness Program Brochures": """Design a brochure that outlines the wellness programs available to employees. The brochure should detail the benefits of each program, how to participate, and the positive impact on well-being. Embed our Employee Value Proposition (EVP) by highlighting how these programs support employee health, work-life balance, and overall satisfaction.
+""",
+"Recognition Program Infographics": """Develop an infographic that visually communicates the key elements of our recognition program. Include statistics or metrics that demonstrate the program’s success. Ensure the infographic reflects our Employee Value Proposition (EVP) by showcasing how recognition aligns with our values and supports a culture of appreciation.
+""",
+"Recognition Emails, Team Event Invites": """Draft a recognition email or team event invitation that highlights [insert achievement or event details]. The email should include personalized elements to make the recipient feel valued. Reflect our Employee Value Proposition (EVP) by emphasizing how the recognition or event aligns with our company’s commitment to celebrating success and fostering team spirit.
+""",
+"Employee Spotlight Videos, Team Event Highlights": """Create a video that spotlights an employee’s achievements or highlights a recent team event. The video should feature key moments or contributions and be engaging in both style and content. Embed our Employee Value Proposition (EVP) by emphasizing how these stories align with our values of excellence, teamwork, and community.
+""",
+"Pulse Surveys, Recognition Feedback": """Design a pulse survey or feedback form that gathers employee input on [insert specific focus area, e.g., engagement, recognition]. The survey should include targeted questions that align with our Employee Value Proposition (EVP) by focusing on how well employees feel recognized and supported within the company.
+""",
+"Mentorship Guides, Team-Building Guides": """Create a guide for our mentorship or team-building program that outlines the program’s objectives, key activities, and criteria for participation. The guide should include practical tips and resources. Ensure that the guide reflects our Employee Value Proposition (EVP) by highlighting how the program supports professional development, collaboration, and team cohesion.
+""",
+"Campaign Posts, Wellness Program Highlights": """Develop a series of campaign posts or highlights that promote our wellness programs. The content should focus on key messages, include engaging visuals, and encourage participation. Embed our Employee Value Proposition (EVP) by aligning the campaign with our commitment to employee well-being, health, and a balanced lifestyle.
+""",
+"Engagement Newsletters, Recognition Program Updates": """Create a newsletter that updates employees on engagement initiatives and recognition program activities. Include details about upcoming events and spotlight employees who have been recognized. Reflect our Employee Value Proposition (EVP) by emphasizing how these efforts contribute to a supportive and motivated workplace.
+""",
+"Team-Building Events, Engagement Webinars": """Draft an invitation or outline for a team-building event or engagement webinar. The content should include event details, objectives, and key activities that will take place. Reflect our Employee Value Proposition (EVP) by highlighting how the event supports team cohesion, learning, and a positive work environment.
+""",
+"Interactive Employee Recognition Platforms": """Design a communication plan to introduce an interactive employee recognition platform. The plan should include details about the platform’s features, how employees can participate, and the timeline for launch. Ensure the communication reflects our Employee Value Proposition (EVP) by emphasizing how the platform will make recognition more accessible and aligned with our values of appreciation and excellence.
+""",
+"Exit Announcement (Internal)": """Draft an internal exit announcement to inform the team about [insert employee’s name] departure. The announcement should include the employee’s role, reason for departure (if applicable), last working day, and a message of appreciation for their contributions. Reflect our Employee Value Proposition (EVP) by emphasizing our gratitude and maintaining a respectful tone.
+""",
+"Exit Interview Questionnaire": """Create an exit interview questionnaire designed to gather feedback from departing employees. The questionnaire should focus on understanding their reasons for leaving, overall satisfaction, and suggestions for improvement. Ensure the questionnaire reflects our Employee Value Proposition (EVP) by showing a genuine interest in learning from their experience and improving the work environment.
+""",
+"Separation Checklist": """Develop a separation checklist that outlines the tasks to be completed before an employee’s departure. The checklist should include items such as returning company property, completing final payroll, and any other necessary steps. Reflect our Employee Value Proposition (EVP) by ensuring the process is smooth, organized, and respectful of the departing employee.
+""",
+"Final Pay and Benefits Communication": """Compose a communication that explains the final pay and benefits situation for departing employees. The communication should include details on final pay, any continuation or termination of benefits, and who to contact with questions. Embed our Employee Value Proposition (EVP) by ensuring clarity, fairness, and support during this transition.
+""",
+"Thank You and Farewell Letter": """Draft a personalized thank you and farewell letter to be given to the departing employee. The letter should express gratitude for their contributions, highlight positive memories, and offer encouragement for their future endeavors. Reflect our Employee Value Proposition (EVP) by showing appreciation and fostering a positive relationship, even as they leave the company.
+""",
+"Knowledge Transfer Document": """Create a knowledge transfer document that the departing employee can use to pass on critical information to their successor or team. The document should include details on key projects, responsibilities, and handover instructions. Ensure the process reflects our Employee Value Proposition (EVP) by emphasizing the importance of a smooth transition and continued team success.
+""",
+"Exit Process Overview (For Managers)": """Develop an overview document for managers to guide them through the exit process. The document should outline the steps to be followed, key responsibilities, and communication guidelines to ensure the process is handled professionally and empathetically. Reflect our Employee Value Proposition (EVP) by emphasizing a respectful and supportive approach to employee departures.
+""",
+"Alumni Network Invitation": """Draft an invitation for departing employees to join the company’s alumni network. The communication should include details about the network, benefits of joining, and instructions for signing up. Embed our Employee Value Proposition (EVP) by highlighting the value of staying connected and the continued support the company offers even after departure.
+""",
+"References and Recommendations Letter": """Create a reference or recommendation letter for a departing employee. The letter should highlight the employee’s role, key achievements, and include contact details for verification. Reflect our Employee Value Proposition (EVP) by ensuring the letter is positive, supportive, and aligned with our commitment to recognizing employee contributions.
+""",
+"Exit Survey Invitation": """Compose an invitation for the departing employee to complete an exit survey. The invitation should explain the purpose of the survey, provide a link, and assure the employee of confidentiality. Ensure the communication aligns with our Employee Value Proposition (EVP) by emphasizing the value of their feedback and our commitment to improving the employee experience.
+""",
+"Transition Communication Plan": """Develop a communication plan for informing key stakeholders about an employee’s departure and the transition process. The plan should include a timeline, key messages, and guidelines for ensuring a smooth transition. Reflect our Employee Value Proposition (EVP) by focusing on clear, respectful, and timely communication throughout the transition.
+""",
+"Exit Package Overview": """Create an overview document that explains the exit package being offered to the departing employee. The document should detail the components of the package, payment schedule, and any legal considerations. Embed our Employee Value Proposition (EVP) by ensuring the package is presented transparently, fairly, and with respect for the employee’s contributions to the company.
+""",
+"Alumni Newsletter": """Create a newsletter specifically for alumni that includes key updates about the company, highlights alumni achievements, and provides information about upcoming events. Embed our Employee Value Proposition (EVP) by showcasing the ongoing connection between the company and its alumni, and by emphasizing opportunities for continued engagement.
+""",
+"Alumni Portal Welcome Message": """Draft a welcome message for the company’s alumni portal. The message should introduce the portal’s features, highlight the key benefits of joining, and provide clear instructions for registration. Reflect our Employee Value Proposition (EVP) by emphasizing the value of staying connected and the resources available to alumni through the portal.
+""",
+"Alumni Event Invitations": """Compose an invitation for an upcoming alumni event. The invitation should include all necessary event details, explain the purpose of the event, and provide RSVP instructions. Ensure that the communication reflects our Employee Value Proposition (EVP) by emphasizing how the event supports networking, learning, and continued engagement with the company.
+""",
+"Alumni Success Stories": """Create a series of success stories that feature alumni who have achieved significant milestones since leaving the company. The stories should highlight their achievements and how their time at the company contributed to their success. Embed our Employee Value Proposition (EVP) by showing the lasting impact of the company’s culture and development opportunities.
+""",
+"Alumni Networking Opportunities": """Draft a communication that informs alumni about upcoming networking opportunities. The message should include details about the event, key participants, and the purpose of the networking session. Reflect our Employee Value Proposition (EVP) by emphasizing the benefits of staying connected and how these opportunities can contribute to ongoing professional growth.
+""",
+"Alumni Feedback Surveys": """Create a feedback survey for alumni to gather their insights on [insert specific topic, e.g., alumni engagement, event satisfaction]. The survey should include targeted questions, a link to participate, and an assurance of confidentiality. Ensure that the survey aligns with our Employee Value Proposition (EVP) by emphasizing the importance of alumni feedback in shaping future initiatives.
+""",
+"Alumni Social Media Content": """Develop a series of social media posts aimed at engaging alumni. The content should include key messages, engaging visuals, and a clear call-to-action for alumni to interact or participate in upcoming activities. Reflect our Employee Value Proposition (EVP) by showcasing how the company values its alumni and encourages continued connection and involvement.
+""",
+"Re-engagement Campaigns": """Create a re-engagement campaign aimed at alumni who have not been active recently. The campaign should focus on key messages that encourage them to reconnect with the company, and include any incentives for re-engagement. Embed our Employee Value Proposition (EVP) by emphasizing the value of the alumni network and the mutual benefits of staying involved.
+""",
+"Alumni Recognition Programs": """Develop a recognition program that celebrates the achievements of alumni. The program should include details about how alumni can be recognized, eligibility criteria, and the methods of recognition (e.g., awards, features in newsletters). Reflect our Employee Value Proposition (EVP) by emphasizing the company’s ongoing commitment to celebrating success and maintaining strong ties with its former employees.
+""",
+"Alumni Mentorship Program": """Create a communication plan for an alumni mentorship program that connects former employees with current staff or other alumni. The plan should outline the program’s objectives, criteria for matching mentors and mentees, and the benefits of participation. Ensure that the program reflects our Employee Value Proposition (EVP) by fostering continuous learning and professional development across the alumni network.
+""",
+"Career Opportunities Updates for Alumni": """Compose a periodic update that informs alumni about career opportunities within the company. The update should highlight available job openings, key qualifications needed, and application instructions. Reflect our Employee Value Proposition (EVP) by emphasizing any alumni-specific benefits or advantages in rejoining the company, and how these opportunities align with their career growth.
+""",
+"Alumni Referral Program": """Draft a communication about the alumni referral program. The message should detail how the program works, the incentives for successful referrals, eligibility criteria, and instructions for submitting referrals. Embed our Employee Value Proposition (EVP) by emphasizing the value of alumni contributions in bringing in top talent and maintaining a strong connection to the company’s success.
+""",
 }
 
-def get_evp_embedment_data_from_chatgpt(company_name, user, all_touchPoints, top_4_themes_data, tagline_data, evp_promise_data, evp_audit_data):
+def get_evp_embedment_data_from_chatgpt(company_name, user, all_touchPoints, evp_statement_themes, tagline_data, evp_promise_data, evp_audit_data):
     company = Company.objects.get(name=company_name)
     company_id = company.id
 
     base_prompt = f"""
                 First analyze the Themes Data
-                Themes Data: {top_4_themes_data}
+                Themes Data: {evp_statement_themes}
 
                 Now analyze the Tagline Data
                 Tagline Data : {tagline_data}

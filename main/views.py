@@ -1822,14 +1822,14 @@ class EVPEmbedmentAPIView(APIView):
         all_touchPoints = request.data.get("touchpoints")
 
         try:
-            top_4_themes_instances = MessagingHierarchyTabs.objects.filter(user=user, company=company)
-        except MessagingHierarchyTabs.DoesNotExist:
-            return Response({"error": "Messaging Hierarchy Tabs does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            evp_statement_themes_instances = EVPStatementThemes.objects.filter(user=user, company=company)
+        except EVPStatementThemes.DoesNotExist:
+            return Response({"error": "EVPStatementThemes does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            tagline_instance = MessagingHierarchyData.objects.get(user=user, company=company)
-        except MessagingHierarchyData.DoesNotExist:
-            return Response({"error": "Messaging Hierarchy Data does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            evp_statement_instance = EVPStatement.objects.get(user=user, company=company)
+        except EVPStatement.DoesNotExist:
+            return Response({"error": "EVPStatement does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
         try:
             evp_promise_instances = EVPPromise.objects.filter(user=user, company=company)
@@ -1841,9 +1841,9 @@ class EVPEmbedmentAPIView(APIView):
         except EVPAudit.DoesNotExist:
             return Response({"error": "EVP Audit does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
-        top_4_themes_data = " ".join(instance.tabs_data for instance in top_4_themes_instances)
+        evp_statement_themes = " ".join(instance.theme_desc for instance in evp_statement_themes_instances)
         
-        tagline_data = tagline_instance.tagline
+        tagline_data = evp_statement_instance.tagline_desc
 
         evp_promise_data_list = []
         for instance in evp_promise_instances:
@@ -1863,7 +1863,7 @@ class EVPEmbedmentAPIView(APIView):
             company_name,
             user,
             all_touchPoints,
-            top_4_themes_data,
+            evp_statement_themes,
             tagline_data,
             evp_promise_data,
             evp_audit_data
