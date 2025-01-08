@@ -655,10 +655,6 @@ class DesignPrinciplesAPIView(APIView):
     def post(self, request):
         user = request.user
         company_name = request.data.get("company_name")
-        try:
-            company = Company.objects.get(user=user, name=company_name)
-        except Company.DoesNotExist:
-            return Response({"message": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
         if "documents" in request.FILES:
             if os.path.exists(r"media\documents"):
@@ -680,22 +676,22 @@ class DesignPrinciplesAPIView(APIView):
             design_principles = get_design_principles(company_name)
             DesignPrinciples.objects.create(
             user=user,
-            company=company,
-            question_1=design_principles["question_1"],
-            question_2=design_principles["question_2"],
-            question_3=design_principles["question_3"],
-            question_4=design_principles["question_4"],
-            question_5=design_principles["question_5"],
-            question_6=design_principles["question_6"],
-            question_7=design_principles["question_7"],
-            question_8=design_principles["question_8"],
-            question_9=design_principles["question_9"],
-            question_10=design_principles["question_10"],
-            question_11=design_principles["question_11"],
-            question_12=design_principles["question_12"],
-            question_13=design_principles["question_13"],
-            question_14=design_principles["question_14"],
-            question_15=design_principles["question_15"],
+            company_name=company_name,
+            question_1=design_principles.get("question_1", ""),
+            question_2=design_principles.get("question_2", ""),
+            question_3=design_principles.get("question_3", ""),
+            question_4=design_principles.get("question_4", ""),
+            question_5=design_principles.get("question_5", ""),
+            question_6=design_principles.get("question_6", ""),
+            question_7=design_principles.get("question_7", ""),
+            question_8=design_principles.get("question_8", ""),
+            question_9=design_principles.get("question_9", ""),
+            question_10=design_principles.get("question_10", ""),
+            question_11=design_principles.get("question_11", ""),
+            question_12=design_principles.get("question_12", ""),
+            question_13=design_principles.get("question_13", ""),
+            question_14=design_principles.get("question_14", ""),
+            question_15=design_principles.get("question_15", ""),
             )
 
             return Response(
@@ -707,7 +703,7 @@ class DesignPrinciplesAPIView(APIView):
 
         design_principles = request.data.get("design_principles")
 
-        existing_design_principles = DesignPrinciples.objects.filter(user=user, company=company).first()
+        existing_design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
 
         if existing_design_principles:
             return Response(
@@ -717,22 +713,22 @@ class DesignPrinciplesAPIView(APIView):
 
         DesignPrinciples.objects.create(
             user=user,
-            company=company,
-            question_1=design_principles["question_1"],
-            question_2=design_principles["question_2"],
-            question_3=design_principles["question_3"],
-            question_4=design_principles["question_4"],
-            question_5=design_principles["question_5"],
-            question_6=design_principles["question_6"],
-            question_7=design_principles["question_7"],
-            question_8=design_principles["question_8"],
-            question_9=design_principles["question_9"],
-            question_10=design_principles["question_10"],
-            question_11=design_principles["question_11"],
-            question_12=design_principles["question_12"],
-            question_13=design_principles["question_13"],
-            question_14=design_principles["question_14"],
-            question_15=design_principles["question_15"],
+            company_name=company_name,
+            question_1=design_principles.get("question_1", ""),
+            question_2=design_principles.get("question_2", ""),
+            question_3=design_principles.get("question_3", ""),
+            question_4=design_principles.get("question_4", ""),
+            question_5=design_principles.get("question_5", ""),
+            question_6=design_principles.get("question_6", ""),
+            question_7=design_principles.get("question_7", ""),
+            question_8=design_principles.get("question_8", ""),
+            question_9=design_principles.get("question_9", ""),
+            question_10=design_principles.get("question_10", ""),
+            question_11=design_principles.get("question_11", ""),
+            question_12=design_principles.get("question_12", ""),
+            question_13=design_principles.get("question_13", ""),
+            question_14=design_principles.get("question_14", ""),
+            question_15=design_principles.get("question_15", ""),
         )
 
         return Response(
