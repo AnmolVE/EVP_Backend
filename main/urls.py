@@ -17,7 +17,7 @@ urlpatterns = [
     path("industry-trends-home/", IndustryTrendsHomeAPIView.as_view(), name="industry-trends-home"),
     path("chatbot/", ChatBotAPIView.as_view(), name="search"),
     
-    path("search/", SearchWebsiteView.as_view(), name="search"),
+    path("save-secondary-documents/", SecondaryResearchDocuments.as_view(), name="save-secondary-documents"),
     path("evp-statement/", EVPStatementAPIView.as_view(), name="evp-statement"),
     path("themes-regenerate/", Top4ThemesRegenerateAPIView.as_view(), name="themes-regenerate"),
     path("send-mail/", SendMailAPIView.as_view(), name="send-mail"),
@@ -25,6 +25,7 @@ urlpatterns = [
     path("design-principles/", DesignPrinciplesAPIView.as_view(), name="design-principles"),
     path("design-principles/<str:company_name>/", DesignPrinciplesSpecificAPIView.as_view(), name="design-principles-specific"),
     path("talent-dataset/", TalentDatasetAPIView.as_view(), name="talent-dataset"),
+    path("companies/", CompanyAPIView.as_view(), name='company'),
     path("companies/<str:company_name>/", CompanySpecificAPIView.as_view(), name='company-specific'),
     path("perception/<str:company_name>/", PerceptionSpecificAPIView.as_view(), name='perception-specific'),
     path("loyalty/<str:company_name>/", LoyaltySpecificAPIView.as_view(), name='loyalty-specific'),

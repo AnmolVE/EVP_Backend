@@ -183,34 +183,8 @@ langchain_query = {
 """
 }
 
-def query_with_langchain(company_name):
-    loader = PyPDFLoader(r"media\final_pdf\merged_pdf.pdf")
-    document_data = loader.load()
-
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
-    text_chunks = text_splitter.split_documents(document_data)
-    documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
-
-    embeddings = create_embeddings()
-
-    sanitized_company_name = re.sub(r'\s+', '_', company_name)
-    client = chromadb.PersistentClient(path=f"vector_databases/{sanitized_company_name}")
-    collection = client.get_or_create_collection(
-        name="test",
-        embedding_function=embeddings,
-        metadata={"hnsw:space": "cosine"},
-    )
-
-    current_count = collection.count()
-    ids = [f"id{current_count + i}" for i in range(len(documents))]
-    embedded_documents = embeddings([documents[i] for i in range(len(documents))])
-
-    collection.add(
-        embeddings=embedded_documents,
-        documents=documents,
-        ids=ids,
-    )
-
+def query_with_langchain(company_name, collection):
+    
     json_data = {}
     for key, query in langchain_query.items():
         print(key)

@@ -384,19 +384,18 @@ class IndustryTrendsHomeAPIView(APIView):
             status=status.HTTP_200_OK
         )
 
-class SearchWebsiteView(APIView):
+class SecondaryResearchDocuments(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
         company_name = request.data.get('company_name')
         if not company_name:
             return Response({'error': 'company_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         if "documents" in request.FILES:
-            if os.path.exists(r"media\documents"):
-                for filename in os.listdir(r"media\documents"):
-                    file_path = os.path.join(r"media\documents", filename)
+            if os.path.exists("media\documents"):
+                for filename in os.listdir("media\documents"):
+                    file_path = os.path.join("media\documents", filename)
                     try:
                         if os.path.isfile(file_path) or os.path.islink(file_path):
                             os.unlink(file_path)
@@ -410,55 +409,39 @@ class SearchWebsiteView(APIView):
                 response = save_documents(document, "documents")
                 all_documents.append(response)
             merge_documents("media\documents", "final_pdf", "merged_pdf.pdf")
-        else:
-            uploaded_documents = None
-
-        final_data = {}
-        if uploaded_documents:
-            print("In if block")
-            data_from_langchain = query_with_langchain(company_name)
-
-            data_with_values_from_langchain = {field: value for field, value in data_from_langchain.items() if not re.search(r'not\s*found', value, re.IGNORECASE)}
-
-            final_data.update(data_with_values_from_langchain)
-
-            empty_fields_from_langchain = [field for field, value in data_from_langchain.items() if re.search(r'not\s*found', value, re.IGNORECASE)]
-
-            fields_to_query_with_bing = [field for field in bing_query_data if field in empty_fields_from_langchain]
-
-            data_from_bing = get_data_from_bing(company_name, fields_to_query_with_bing)
-
-            if (len(data_from_bing)) > 0:
-                data_with_values_from_bing = {field: value for field, value in data_from_bing.items() if not re.search(r'not\s*found', value, re.IGNORECASE)}
-
-                final_data.update(data_with_values_from_bing)
-
-            # fields_to_query_with_chatgpt_1 = {field: "" for field in chatgpt_1_query_data if field in empty_fields_from_langchain}
-
-            # if (len(fields_to_query_with_chatgpt_1) > 0):
-            #     data_from_chatgpt_1 = get_data_from_chatgpt_1(company_name, fields_to_query_with_chatgpt_1)
-            #     final_data.update(data_from_chatgpt_1)
-
-        else:
-            print("In else block")
-            data_from_bing = get_data_from_bing(company_name, bing_query_data)
-
-            final_data.update(data_from_bing)
-
-            # data_from_chatgpt_1 = get_data_from_chatgpt_1(company_name, chatgpt_1_query_data)
-
-            # final_data.update(data_from_chatgpt_1)
-
-        saved_data_in_database_in_string = save_data_to_database(final_data, company_name, user)
-        
-        # with open(r"media\pgData.txt", "w") as file:
-        #     file.write(saved_data_in_database_in_string)
-        # save_pgData_to_vector_database(r"media\pgData.txt", company_name)
-        # print("Success")
-
-        # return Response(data_from_langchain)
-        return Response(final_data)
+            loader = PyPDFLoader(r"media\final_pdf\merged_pdf.pdf")
+            document_data = loader.load()
     
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
+            text_chunks = text_splitter.split_documents(document_data)
+            documents = [text_chunks[i].page_content for i in range(len(text_chunks))]
+            embeddings = create_embeddings()
+        else:
+            text_chunks = []
+ 
+        sanitized_company_name = re.sub(r'\s+', '_', company_name)
+
+        persistent_directory = f"vector_databases/{sanitized_company_name}"
+        chroma_client = chromadb.PersistentClient(path=persistent_directory)
+        if os.path.exists(os.path.join(persistent_directory)):
+            if text_chunks:
+                collection = chroma_client.get_or_create_collection(
+                    name="test",
+                    embedding_function=embeddings,
+                )
+
+                current_count = collection.count()
+                ids = [f"id{current_count + i}" for i in range(len(documents))]
+                embedded_documents = embeddings([documents[i] for i in range(len(documents))])
+
+                collection.add(
+                    embeddings=embedded_documents,
+                    documents=documents,
+                    ids=ids,
+                )
+                return Response("Documents added successfully", status=status.HTTP_201_CREATED)
+        return Response("Please upload at least one document", status=status.HTTP_400_BAD_REQUEST)
+
 class Top4ThemesRegenerateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -703,7 +686,14 @@ class DesignPrinciplesAPIView(APIView):
 
         design_principles = request.data.get("design_principles")
 
-        existing_design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
+        try:
+            existing_design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
+            return Response(
+                "Design Principles already exist",
+                status=status.HTTP_200_OK
+            )
+        except DesignPrinciples.DoesNotExist:
+            existing_design_principles = None
 
         if existing_design_principles:
             return Response(
@@ -741,19 +731,88 @@ class DesignPrinciplesSpecificAPIView(APIView):
 
     def get(self, request, company_name):
         user = request.user
-        try:
-            company = Company.objects.get(user=user, name=company_name)
-        except Company.DoesNotExist:
-            return Response({'error': 'Company does not exist'}, status=status.HTTP_404_NOT_FOUND)
         
         try:
-            design_principles = DesignPrinciples.objects.get(user=user, company=company)
+            design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
         except DesignPrinciples.DoesNotExist:
             return Response({"error": "Design Principles does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
         serializer = DesignPrinciplesSerializer(design_principles)
         return Response(serializer.data)
-    
+
+class CompanyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+
+        try:
+            company = Company.objects.get(user=user)
+            serializer = CompanySerializer(company)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except:
+            company = None
+
+        final_data = {}
+        sanitized_company_name = re.sub(r'\s+', '_', company_name)
+
+        embeddings = create_embeddings()
+        persistent_directory = f"vector_databases/{sanitized_company_name}"
+        chroma_client = chromadb.PersistentClient(path=persistent_directory)
+        if os.path.exists(os.path.join(persistent_directory)):
+            try:
+                collection = chroma_client.get_or_create_collection(
+                    name="test",
+                    embedding_function=embeddings,
+                )
+            except Exception as e:
+                collection = None
+
+        if collection:
+            print("In if block")
+            data_from_langchain = query_with_langchain(company_name, collection)
+
+            data_with_values_from_langchain = {field: value for field, value in data_from_langchain.items() if not re.search(r'not\s*found', value, re.IGNORECASE)}
+
+            final_data.update(data_with_values_from_langchain)
+
+            empty_fields_from_langchain = [field for field, value in data_from_langchain.items() if re.search(r'not\s*found', value, re.IGNORECASE)]
+
+            fields_to_query_with_bing = [field for field in bing_query_data if field in empty_fields_from_langchain]
+
+            data_from_bing = get_data_from_bing(company_name, fields_to_query_with_bing)
+
+            if (len(data_from_bing)) > 0:
+                data_with_values_from_bing = {field: value for field, value in data_from_bing.items() if not re.search(r'not\s*found', value, re.IGNORECASE)}
+
+                final_data.update(data_with_values_from_bing)
+
+            # fields_to_query_with_chatgpt_1 = {field: "" for field in chatgpt_1_query_data if field in empty_fields_from_langchain}
+
+            # if (len(fields_to_query_with_chatgpt_1) > 0):
+            #     data_from_chatgpt_1 = get_data_from_chatgpt_1(company_name, fields_to_query_with_chatgpt_1)
+            #     final_data.update(data_from_chatgpt_1)
+
+        else:
+            print("In else block")
+            data_from_bing = get_data_from_bing(company_name, bing_query_data)
+
+            final_data.update(data_from_bing)
+
+            # data_from_chatgpt_1 = get_data_from_chatgpt_1(company_name, chatgpt_1_query_data)
+
+            # final_data.update(data_from_chatgpt_1)
+
+        saved_data_in_database_in_string = save_data_to_database(final_data, company_name, user)
+        
+        # with open(r"media\pgData.txt", "w") as file:
+        #     file.write(saved_data_in_database_in_string)
+        # save_pgData_to_vector_database(r"media\pgData.txt", company_name)
+        # print("Success")
+
+        # return Response(data_from_langchain)
+        return Response(final_data)
+
 class CompanySpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
