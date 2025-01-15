@@ -1410,7 +1410,7 @@ class AlignmentAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         try:
-            design_principles_instance = DesignPrinciples.objects.get(user=user, company=company)
+            design_principles_instance = DesignPrinciples.objects.get(user=user, company_name=company_name)
             serializer = DesignPrinciplesSerializer(design_principles_instance)
             design_principles = serializer.data
         except DesignPrinciples.DoesNotExist:
