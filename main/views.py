@@ -638,6 +638,18 @@ class DesignPrinciplesAPIView(APIView):
     def post(self, request):
         user = request.user
         company_name = request.data.get("company_name")
+
+        try:
+            existing_design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
+        except DesignPrinciples.DoesNotExist:
+            existing_design_principles = None
+
+        if existing_design_principles:
+            serializer = DesignPrinciplesSerializer(existing_design_principles)
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
         
         if "documents" in request.FILES:
             if os.path.exists(r"media\documents"):
@@ -686,21 +698,6 @@ class DesignPrinciplesAPIView(APIView):
 
         design_principles = request.data.get("design_principles")
 
-        try:
-            existing_design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
-            return Response(
-                "Design Principles already exist",
-                status=status.HTTP_200_OK
-            )
-        except DesignPrinciples.DoesNotExist:
-            existing_design_principles = None
-
-        if existing_design_principles:
-            return Response(
-                "Design Principles already exist",
-                status=status.HTTP_200_OK
-            )
-
         DesignPrinciples.objects.create(
             user=user,
             company_name=company_name,
@@ -738,7 +735,7 @@ class DesignPrinciplesSpecificAPIView(APIView):
             return Response({"error": "Design Principles does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
         serializer = DesignPrinciplesSerializer(design_principles)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CompanyAPIView(APIView):
     permission_classes = [IsAuthenticated]
