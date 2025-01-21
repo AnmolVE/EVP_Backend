@@ -78,6 +78,12 @@ class Company(models.Model):
     def __str__(self):
         return self.name
     
+# class EVPTollgate(models.Model):
+#     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+#     tollgate_name = models.CharField(max_length=255, null=True, blank=True)
+#     tollgate_document = models.FileField(upload_to="tollgate_documents/", null=True, blank=True)
+    
 class DesignPrinciples(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company_name = models.CharField(max_length=1000, default="")

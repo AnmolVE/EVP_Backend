@@ -2014,11 +2014,19 @@ all_touchpoint_prompts = {
 """,
 }
 
-def get_evp_embedment_data_from_chatgpt(company_name, user, all_touchPoints, evp_statement_themes, tagline_data, evp_promise_data, evp_audit_data):
+def get_evp_embedment_data_from_chatgpt(company_name, user, stage, touchpoint, evp_statement_themes, tagline_data, evp_promise_data, evp_audit_data):
     company = Company.objects.get(name=company_name)
     company_id = company.id
 
-    base_prompt = f"""
+    RESPONSE_JSON = {
+        "touchpoint_data": {
+            "stage": stage,
+            "touchpoint": touchpoint,
+            "message": all_touchpoint_prompts.get(touchpoint, "")
+        }
+    }
+
+    prompt = f"""
                 First analyze the Themes Data
                 Themes Data: {evp_statement_themes}
 
@@ -2031,38 +2039,38 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, all_touchPoints, evp
                 Now analyze the EVP Audit Data
                 EVP Audit Data : {evp_audit_data}
 
-                After analyzing all these datasets, give fetch the required information below about the company named {company_name} from the given data:
+                Using the above given data, Fetch the data for the value of "message" key and returns the response in json format
 
+                Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
+                Just replace the value of key "message" with the actual data of the query and let other fields as it is.
               """
     
-    json_data = {}
-    for stage, touchpoints in all_touchPoints.items():
-        if len(touchpoints) > 0:
-            json_data[stage] = {}
-            for touchpoint in touchpoints:
-                print(touchpoint)
-                information_to_fetch = all_touchpoint_prompts.get(touchpoint, "")
-                prompt = base_prompt + information_to_fetch.format(all_touchpoint_prompts[touchpoint])
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    response_format={ "type": "json_object" },
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are an expert advertising creative art director.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    try:
+        json_response = json.loads(chat_response)
+        json_response = json_response["touchpoint_data"]
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        json_response = {}
 
-                completion = chat_client.chat.completions.create(
-                model=AZURE_OPENAI_DEPLOYMENT,
-                messages = [
-                    {
-                        "role":"system",
-                        "content":"""You are an expert in fetching information from the given data.
-                                    """
-                    },
-                    {
-                        "role":"user",
-                        "content":prompt
-                    }
-                ],
-                temperature=0.3,
-                max_tokens=4000,
-                )
-                chat_response = completion.choices[0].message.content
-                json_data[stage][touchpoint] = chat_response
-    return json_data
+    return json_response
 
     # for stage_name, touchpoints in json_data.items():
     #     stage, created = EVPEmbedmentStage.objects.get_or_create(

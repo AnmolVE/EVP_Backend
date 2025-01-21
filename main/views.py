@@ -1871,7 +1871,8 @@ class EVPEmbedmentAPIView(APIView):
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        all_touchPoints = request.data.get("touchpoints")
+        stage = request.data.get("stage")
+        touchpoint = request.data.get("touchpoint")
 
         try:
             evp_statement_themes_instances = EVPStatementThemes.objects.filter(user=user, company=company)
@@ -1914,7 +1915,8 @@ class EVPEmbedmentAPIView(APIView):
         evp_embedment_data_from_chatgpt = get_evp_embedment_data_from_chatgpt(
             company_name,
             user,
-            all_touchPoints,
+            stage,
+            touchpoint,
             evp_statement_themes,
             tagline_data,
             evp_promise_data,
