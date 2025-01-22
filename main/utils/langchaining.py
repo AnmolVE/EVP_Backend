@@ -1828,7 +1828,7 @@ all_touchpoint_prompts = {
 """,
 "Referral Letter": """Compose a referral letter template that employees can use to recommend our company to potential candidates. The letter should include an overview of our Employee Value Proposition (EVP), particularly focusing on [insert key EVP points], and explain why the company is a great place to work. Include a section for personal anecdotes or reasons the referrer believes the candidate would be a good fit.
 """,
-"Webinar - Get to Know Us": """Create an outline for a 'Get to Know Us' webinar aimed at potential candidates. The webinar should introduce our company, walk through our Employee Value Proposition (EVP), and include segments that cover [insert specific EVP topics]. Plan for interactive elements like Q&A, polls, and a virtual tour to engage participants.
+"Webinar - Get to know us": """Create an outline for a 'Get to Know Us' webinar aimed at potential candidates. The webinar should introduce our company, walk through our Employee Value Proposition (EVP), and include segments that cover [insert specific EVP topics]. Plan for interactive elements like Q&A, polls, and a virtual tour to engage participants.
 """,
 "Career Fair": """Develop a plan for our presence at a career fair that highlights our Employee Value Proposition (EVP). The plan should include ideas for booth design, marketing materials, and talking points that focus on [insert specific EVP elements]. Ensure that our EVP is clearly communicated in all interactions and materials, with a focus on attracting top talent.
 """,
@@ -2025,8 +2025,9 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, stage, touchpoint, e
             "message": all_touchpoint_prompts.get(touchpoint, "")
         }
     }
+    print(RESPONSE_JSON)
 
-    prompt = f"""
+    prompt = f"""Analyze the given data completely and return the response in json format.
                 First analyze the Themes Data
                 Themes Data: {evp_statement_themes}
 
@@ -2039,7 +2040,8 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, stage, touchpoint, e
                 Now analyze the EVP Audit Data
                 EVP Audit Data : {evp_audit_data}
 
-                Using the above given data, Fetch the data for the value of "message" key and returns the response in json format
+                Using the above given data, your task is to find the data about the value of "message" key.
+                Don't just write the message, fetch the actual information from the given data.
 
                 Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
                 Just replace the value of key "message" with the actual data of the query and let other fields as it is.
