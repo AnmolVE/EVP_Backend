@@ -2040,12 +2040,13 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, stage, touchpoint, e
                 Now analyze the EVP Audit Data
                 EVP Audit Data : {evp_audit_data}
 
-                Using the above given data, your task is to find the data about the value of "message" key.
-                Don't just write the message, fetch the actual information from the given data.
+                Using the above given data, your task is to generate the data according to what is asked in the value of "message" key.
 
                 Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
-                Just replace the value of key "message" with the actual data of the query and let other fields as it is.
+                Just replace the value of key "message" with the actual data you generated and let other fields as it is.
+                Do not rewrite the task, generate the actual response whatever is asked you to do in the message value.
               """
+    print(len(prompt))
     
     completion = chat_client.chat.completions.create(
     model=AZURE_OPENAI_DEPLOYMENT,
