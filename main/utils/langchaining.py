@@ -2025,28 +2025,28 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, stage, touchpoint, e
             "message": all_touchpoint_prompts.get(touchpoint, "")
         }
     }
-    print(RESPONSE_JSON)
 
     prompt = f"""Analyze the given data completely and return the response in json format.
                 First analyze the Themes Data
                 Themes Data: {evp_statement_themes}
-
+ 
                 Now analyze the Tagline Data
                 Tagline Data : {tagline_data}
-
+ 
                 Now analyze the EVP Promise Data
                 EVP Promise Data : {evp_promise_data}
-
+ 
                 Now analyze the EVP Audit Data
                 EVP Audit Data : {evp_audit_data}
-
-                Using the above given data, your task is to generate the data according to what is asked in the value of "message" key.
-
+ 
+                After completely analyzing the complete data above, your task is to:
+                "{all_touchpoint_prompts.get(touchpoint, "")}"
+ 
                 Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
-                Just replace the value of key "message" with the actual data you generated and let other fields as it is.
-                Do not rewrite the task, generate the actual response whatever is asked you to do in the message value.
+                Add your response as the value of "message" key and let other fields as it is.
+                **Important**:DON'T REWRITE THE TASK ITSELF IN YOUR RESPONSE AND IF YOU DON'T FIND THE RESPONSE IN THE GIVEN DATA JUST SAY-- "Not found".
               """
-    print(len(prompt))
+    print(prompt)
     
     completion = chat_client.chat.completions.create(
     model=AZURE_OPENAI_DEPLOYMENT,
