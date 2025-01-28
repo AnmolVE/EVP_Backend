@@ -150,6 +150,10 @@ class EVPHandbookAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "handbook_data"]
     list_filter = ["company"]
 
+class EVPCalendarAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company", "calendar_data"]
+    list_filter = ["company"]
+
 class EVPStatementAndPillarsAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "evp_statement_document", "evp_statement_thumbnail", "evp_statement_text"]
     list_filter = ["company"]
@@ -202,6 +206,7 @@ admin.site.register(EVPEmbedmentStage, EVPEmbedmentStageAdmin)
 admin.site.register(EVPEmbedmentTouchpoint, EVPEmbedmentTouchpointAdmin)
 admin.site.register(EVPEmbedmentMessage, EVPEmbedmentMessageAdmin)
 admin.site.register(EVPHandbook, EVPHandbookAdmin)
+admin.site.register(EVPCalendar, EVPCalendarAdmin)
 admin.site.register(EVPStatementAndPillars, EVPStatementAndPillarsAdmin)
 
 

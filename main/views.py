@@ -70,6 +70,7 @@ from .utils.langchaining import (
     get_evp_audit_from_chatgpt,
     get_evp_embedment_data_from_chatgpt,
     get_evp_handbook_data_from_chatgpt,
+    get_evp_calendar_data_from_chatgpt,
 )
 from .utils.email_send import send_email_to_users
 
@@ -2140,13 +2141,13 @@ class EVPHandBookAPIView(APIView):
             serializer = EVPHandbookSerializer(evp_handbook)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        top_4_themes = MessagingHierarchyTabs.objects.filter(user=user, company=company)
-        serializer = MessagingHierarchyTabsSerializer(top_4_themes, many=True)
-        top_4_themes_data = serializer.data
+        evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
+        serializer = MessagingHierarchyTabsSerializer(evp_statement_themes, many=True)
+        evp_statement_themes_data = serializer.data
 
-        messaging_hierarchy = MessagingHierarchyData.objects.get(user=user, company=company)
-        serializer = MessagingHierarchyDataSerializer(messaging_hierarchy)
-        messaging_hierarchy_data = serializer.data
+        evp_statement = EVPStatement.objects.get(user=user, company=company)
+        serializer = MessagingHierarchyDataSerializer(evp_statement)
+        evp_statement_data = serializer.data
 
         evp_promise = EVPPromise.objects.filter(user=user, company=company)
         serializer = EVPPromiseSerializer(evp_promise, many=True)
@@ -2159,13 +2160,73 @@ class EVPHandBookAPIView(APIView):
         evp_handbook_data_from_chatgpt = get_evp_handbook_data_from_chatgpt(
             company_name,
             user,
-            top_4_themes_data,
-            messaging_hierarchy_data,
+            evp_statement_themes_data,
+            evp_statement_data,
             evp_promise_data,
             evp_audit_data,
         )
 
         return Response({"handbook_data": evp_handbook_data_from_chatgpt}, status=status.HTTP_200_OK)
+    
+class EVPCalendarAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_calendar = EVPCalendar.objects.get(user=user, company=company)
+        except EVPCalendar.DoesNotExist:
+            evp_calendar = None
+
+        if evp_calendar:
+            serializer = EVPCalendarSerializer(evp_calendar)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        calendar_data = request.data.get("calendar_data")
+        if calendar_data:
+            evp_calendar, created = EVPCalendar.objects.get_or_create(
+                company = company,
+                user = user,
+                defaults = {"calendar_data": calendar_data}
+            )
+            if not created:
+                evp_calendar.calendar_data = calendar_data
+                evp_calendar.save()
+            serializer = EVPCalendarSerializer(evp_calendar)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
+        serializer = MessagingHierarchyTabsSerializer(evp_statement_themes, many=True)
+        evp_statement_themes_data = serializer.data
+
+        evp_statement = EVPStatement.objects.get(user=user, company=company)
+        serializer = MessagingHierarchyDataSerializer(evp_statement)
+        evp_statement_data = serializer.data
+
+        evp_promise = EVPPromise.objects.filter(user=user, company=company)
+        serializer = EVPPromiseSerializer(evp_promise, many=True)
+        evp_promise_data = serializer.data
+
+        evp_audit = EVPAudit.objects.filter(user=user, company=company)
+        serializer = EVPAuditSerializer(evp_audit, many=True)
+        evp_audit_data = serializer.data
+
+        evp_calendar_data_from_chatgpt = get_evp_calendar_data_from_chatgpt(
+            company_name,
+            user,
+            evp_statement_themes_data,
+            evp_statement_data,
+            evp_promise_data,
+            evp_audit_data,
+        )
+
+        return Response({"calendar_data": evp_calendar_data_from_chatgpt}, status=status.HTTP_200_OK)
 
 class EVPStatementAndPillarsSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]

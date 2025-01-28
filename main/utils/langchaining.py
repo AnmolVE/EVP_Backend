@@ -2097,16 +2097,16 @@ def get_evp_embedment_data_from_chatgpt(company_name, user, stage, touchpoint, e
     
     # return json_data
 
-def get_evp_handbook_data_from_chatgpt(company_name, user, top_4_themes_data, messaging_hierarchy_data, evp_promise_data, evp_audit_data):
+def get_evp_handbook_data_from_chatgpt(company_name, user, evp_statement_themes_data, evp_statement_data, evp_promise_data, evp_audit_data):
 
     prompt = f"""
                 First analyze the Top 4 Themes Data :
 
-                Top 4 Themes Data : {top_4_themes_data}
+                Top 4 Themes Data : {evp_statement_themes_data}
 
                 Now analyze the Messaging Hierarchy Data :
 
-                Messaging Hierarchy Data : {messaging_hierarchy_data}
+                Messaging Hierarchy Data : {evp_statement_data}
 
                 Now analyze the EVP Promise Data :
 
@@ -2120,7 +2120,7 @@ def get_evp_handbook_data_from_chatgpt(company_name, user, top_4_themes_data, me
 
                 Overview
                 a.       Introduction - one paragraph on what is this EVP exercise about
-                c. Chairman's Letter - email for employees from Ashish Agrawal introducing the EVP
+                c. CEO's Letter - email for employees introducing the EVP
                 b.       Journey - Summarises the EVP Narrative section in 3 paragraphs or less 
                 c.       Definition of terms - All technical terms used in the all sections
                 d.       The EVP - The Positioning Statement ( using tagline ) and 3 Pillars
@@ -2142,6 +2142,72 @@ def get_evp_handbook_data_from_chatgpt(company_name, user, top_4_themes_data, me
                 e.       Employee Testimonial Guide - how should these be created
                 4-      Execution Plan
              """
+
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are an expert in fetching information from the given data.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    return chat_response
+
+def get_evp_calendar_data_from_chatgpt(company_name, user, evp_statement_themes_data, evp_statement_data, evp_promise_data, evp_audit_data):
+
+    prompt = f"""
+                First analyze the Top 4 Themes Data :
+
+                Top 4 Themes Data : {evp_statement_themes_data}
+
+                Now analyze the Messaging Hierarchy Data :
+
+                Messaging Hierarchy Data : {evp_statement_data}
+
+                Now analyze the EVP Promise Data :
+
+                EVP Promise Data : {evp_promise_data}
+
+                Now analyze the EVP Audit Data :
+
+                EVP Audit Data : {evp_audit_data}
+
+                After analyzing the complete given data, generate the data for below :
+
+                *"Generate a basic EVP announcement plan for a company that has just completed its Employee Value Proposition (EVP) creation exercise. The plan should outline:
+
+                1. Primary Announcement Strategy:
+                Who should make the announcement? (e.g., CEO, CHRO, or a cross-functional leadership team)
+                Recommended communication channels (e.g., email, town hall, intranet, video message, leadership cascade).
+                Timing considerations (e.g., internal launch before external activation).
+
+                2. Key Messaging & Framing:
+                How to introduce the EVP in a way that is engaging, clear, and inspiring for employees.
+                How to position it as a business enabler (not just an HR initiative).
+                Ways to acknowledge employee contributions in shaping the EVP.
+
+                3. Phased Rollout & Engagement Activities:
+                Ideas for interactive launch activities (e.g., leadership Q&A, storytelling, panel discussions).
+                How to integrate EVP messaging into existing employee touchpoints (onboarding, performance reviews, internal comms).
+                Suggestions for an EVP ambassador program to drive peer-led advocacy.
+
+                4. Follow-Up & Reinforcement:
+                Recommended cadence for ongoing EVP communication.
+                How to measure initial employee sentiment and feedback.
+                Best practices for embedding EVP into long-term employer branding efforts.
+
+                Ensure the plan is structured, action-oriented, and easy to implement, with a focus on employee engagement and adoption. Keep it concise yet detailed enough for a company to execute successfully."*
+             """
+    print(len(prompt))
 
     completion = chat_client.chat.completions.create(
     model=AZURE_OPENAI_DEPLOYMENT,

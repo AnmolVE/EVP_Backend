@@ -154,6 +154,11 @@ class EVPHandbookSerializer(serializers.ModelSerializer):
         model = EVPHandbook
         fields = "__all__"
 
+class EVPCalendarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EVPCalendar
+        fields = "__all__"
+
 class EVPStatementAndPillarsSerializer(serializers.ModelSerializer):
     class Meta:
         model = EVPStatementAndPillars
