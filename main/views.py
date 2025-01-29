@@ -71,6 +71,7 @@ from .utils.langchaining import (
     get_evp_embedment_data_from_chatgpt,
     get_evp_handbook_data_from_chatgpt,
     get_evp_calendar_data_from_chatgpt,
+    get_tollgate1_data,
 )
 from .utils.email_send import send_email_to_users
 
@@ -2167,7 +2168,7 @@ class EVPHandBookAPIView(APIView):
         )
 
         return Response({"handbook_data": evp_handbook_data_from_chatgpt}, status=status.HTTP_200_OK)
-    
+
 class EVPCalendarAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2227,6 +2228,63 @@ class EVPCalendarAPIView(APIView):
         )
 
         return Response({"calendar_data": evp_calendar_data_from_chatgpt}, status=status.HTTP_200_OK)
+
+class Tollgate1APIView(APIView):
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
+            serializer = DesignPrinciplesSerializer(design_principles)
+            design_principles_data = serializer.data
+            print(design_principles_data)
+        except DesignPrinciples.DoesNotExist:
+            return Response({"error": "Design Principles not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        tollgate1_data = get_tollgate1_data(company_name, design_principles_data)
+
+        return Response({"tollgate_data": tollgate1_data}, status=status.HTTP_200_OK)
+    
+class Tollgate2APIView(APIView):
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+            serializer = CompanySerializer(company)
+            company_dataset = serializer.data
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            key_themes = KeyThemes.objects.filter(user=user, company=company)
+            serializer = KeyThemesSerializer(key_themes, many=True)
+            key_themes_data = serializer.data
+        except KeyThemes.DoesNotExist:
+            return Response({"error": "Key Themes does not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            attribute_of_a_great_place = AttributesOfGreatPlace.objects.get(user=user, company=company)
+            serializer = AttributesOfGreatPlaceSerializer(attribute_of_a_great_place)
+            attribute_of_a_great_place_data = serializer.data
+        except AttributesOfGreatPlace.DoesNotExist:
+            return Response({"error": "Attribute of a great place does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            audience_wise_messaging = AudienceWiseMessaging.objects.get(user=user, company=company)
+            serializer = AudienceWiseMessagingSerializer(audience_wise_messaging)
+            audience_wise_messaging_data = serializer.data
+        except AudienceWiseMessaging.DoesNotExist:
+            return Response({"error": "Audience Wise Messaging does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        pass
+        
+
 
 class EVPStatementAndPillarsSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]

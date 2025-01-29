@@ -2228,6 +2228,79 @@ def get_evp_calendar_data_from_chatgpt(company_name, user, evp_statement_themes_
     chat_response = completion.choices[0].message.content
     return chat_response
 
+def get_tollgate1_data(company_name, design_principles_data):
+    embeddings = create_embeddings()
+
+    sanitized_company_name = re.sub(r'\s+', '_', company_name)
+    client = chromadb.PersistentClient(path=f"vector_databases/{sanitized_company_name}")
+
+    collection = client.get_or_create_collection(
+        name="test",
+        embedding_function=embeddings,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+    query = """
+            Outline the major talent challenges the company aims to address.
+            Acknowledge that the company partnered with STIMULAI, an AI-powered employer branding platform that combines technology with deep domain expertise to enhance research and insights.
+            Primary Research: Conducted with various employee and candidate cohorts through interviews, think tanks, and surveys.
+            Secondary Research: Analysis of internal documentation, external employer brand perception, and competitor benchmarking.
+            STIMULAI's Proprietary Research Engine & Algorithm: AI-driven insights that further augmented the data analysis.
+    """
+    query_results = collection.query(
+                query_texts=[query],
+                n_results=40,
+            )
+    fetched_documents = " ".join(query_results["documents"][0])
+
+    prompt = f"""
+        First analyze the given design principles data:
+        DesignPrinciples: {design_principles_data}
+
+        Then analyze the below additional information:
+        {fetched_documents}
+
+        After completely analyze the above information do the following using the information
+
+        "Generate a Tollgate 1 summary PDF that provides an executive-level overview of the DISCOVER phase for stakeholder approval. The document should include:
+
+        1. Objective of the DISCOVER Phase
+        Summarize why the company embarked on the EVP creation journey by referencing the 15 questions answered in the Design Principles section.
+        Outline the major talent challenges the company aims to address.
+
+        2. Strategic Partnership with STIMULAI
+        Acknowledge that the company partnered with STIMULAI, an AI-powered employer branding platform that combines technology with deep domain expertise to enhance research and insights.
+        
+        3. Research Methodology
+        Primary Research: Conducted with various employee and candidate cohorts through interviews, think tanks, and surveys.
+        Secondary Research: Analysis of internal documentation, external employer brand perception, and competitor benchmarking.
+        STIMULAI's Proprietary Research Engine & Algorithm: AI-driven insights that further augmented the data analysis.
+
+        4. Governance & Approval Process
+        Confirm that a progress report has been downloaded and shared with key stakeholders.
+        Approval required to proceed to the DEVELOP phase.
+        Ensure the summary is structured, executive-friendly, and visually formatted for stakeholder review and sign-off."
+        """
+    
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are an expert in fetching information from the given data.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    return chat_response
+
 import chromadb
 
 def testing_data(collection):
