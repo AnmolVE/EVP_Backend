@@ -72,6 +72,9 @@ from .utils.langchaining import (
     get_evp_handbook_data_from_chatgpt,
     get_evp_calendar_data_from_chatgpt,
     get_tollgate1_data,
+    get_tollgate2_data,
+    get_tollgate3_data,
+    get_tollgate4_data,
 )
 from .utils.email_send import send_email_to_users
 
@@ -2257,7 +2260,7 @@ class Tollgate2APIView(APIView):
         try:
             company = Company.objects.get(user=user, name=company_name)
             serializer = CompanySerializer(company)
-            company_dataset = serializer.data
+            company_data = serializer.data
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
         
@@ -2282,9 +2285,91 @@ class Tollgate2APIView(APIView):
         except AudienceWiseMessaging.DoesNotExist:
             return Response({"error": "Audience Wise Messaging does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
-        pass
-        
+        try:
+            talent_insights = TalentDataset.objects.filter(user=user, company=company)
+            serializer = TalentDatasetSerializer(talent_insights, many=True)
+            talent_insights_data = serializer.data
+        except TalentDataset.DoesNotExist:
+            return Response({"error": "Talent Dataset does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
+        tollgate2_data = get_tollgate2_data(company_data, key_themes_data, attribute_of_a_great_place_data, audience_wise_messaging_data, talent_insights_data)
+
+        return Response({"tollgate2_data": tollgate2_data})
+    
+class Tollgate3APIView(APIView):
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            analysis = SwotAnalysis.objects.get(user=user, company=company)
+            serializer = SwotAnalysisSerializer(analysis)
+            analysis_data = serializer.data
+        except SwotAnalysis.DoesNotExist:
+            return Response({"error": "Analysis does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            alignment = Alignment.objects.filter(user=user, company=company)
+            serializer = AlignmentSerializer(alignment, many=True)
+            alignment_data = serializer.data
+        except Alignment.DoesNotExist:
+            return Response({"error": "Alignment does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        tollgate3_data = get_tollgate3_data(analysis_data, alignment_data)
+
+        return Response({"tollgate3_data": tollgate3_data})
+    
+class Tollgate4APIView(APIView):
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
+            serializer = EVPStatementThemesSerializer(evp_statement_themes, many=True)
+            evp_statement_themes_data = serializer.data
+        except EVPStatementThemes.DoesNotExist:
+            return Response({"error": "EVP Statement Themes does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            creative_direction = CreativeDirection.objects.get(user=user, company=company)
+            serializer = CreativeDirectionSerializer(creative_direction)
+            creative_direction_data = serializer.data
+        except CreativeDirection.DoesNotExist:
+            return Response({"error": "Creative Direction does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_definitions = EVPDefinition.objects.filter(user=user, company=company)
+            serializer = EVPDefinitionSerializer(evp_definitions, many=True)
+            evp_definitions_data = serializer.data
+        except EVPDefinition.DoesNotExist:
+            return Response({"error": "EVP Definition does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_audits = EVPAudit.objects.filter(user=user, company=company)
+            serializer = EVPAuditSerializer(evp_audits, many=True)
+            evp_audits_data = serializer.data
+        except EVPAudit.DoesNotExist:
+            return Response({"error": "EVP Audit does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            evp_promises = EVPPromise.objects.filter(user=user, company=company)
+            serializer = EVPPromiseSerializer(evp_promises, many=True)
+            evp_promises_data = serializer.data
+        except EVPPromise.DoesNotExist:
+            return Response({"error": "EVP Promise does not exist"})
+        
+        tollgate4_data = get_tollgate4_data(evp_statement_themes_data, creative_direction_data, evp_definitions_data, evp_audits_data, evp_promises_data)
+
+        return Response({"tollgate4_data": tollgate4_data})
 
 class EVPStatementAndPillarsSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
