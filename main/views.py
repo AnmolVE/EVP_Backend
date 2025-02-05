@@ -742,6 +742,17 @@ class DesignPrinciplesSpecificAPIView(APIView):
         serializer = DesignPrinciplesSerializer(design_principles)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def delete(self, request, company_name):
+        user = request.user
+
+        try:
+            design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
+        except DesignPrinciples.DoesNotExist:
+            return Response({"error": "Design Principles does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        design_principles.delete()
+        return Response({"message": "Design Principles deleted successfully"}, status=status.HTTP_200_OK)
+
 class CompanyAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
