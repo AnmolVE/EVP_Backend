@@ -183,7 +183,7 @@ langchain_query = {
 """
 }
 
-def query_with_langchain(company_name, collection):
+def query_with_langchain(company_name, collection, design_principles_data):
     
     json_data = {}
     for key, query in langchain_query.items():
@@ -196,7 +196,7 @@ def query_with_langchain(company_name, collection):
         fetched_documents = " ".join(query_results["documents"][0])
 
         prompt = f"""
-        Information: {fetched_documents} \n \n Question: {query}.
+        Information: {fetched_documents} \n Extra Information: {design_principles_data} \n\n Question: {query}.
         """
 
         completion = chat_client.chat.completions.create(
@@ -833,6 +833,8 @@ def get_audience_wise_messaging_from_chatgpt(company_name):
 
         Make sure to format the response exactly like {RESPONSE_JSON} and use it as a guide.
         Add keys as it is and replace the value with the actual data.
+
+        **Important:** If you don't find the data for any key then write "Not found" in the value of that particular key.
         """
 
         print(prompt)

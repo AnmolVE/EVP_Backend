@@ -766,6 +766,13 @@ class CompanyAPIView(APIView):
         except:
             company = None
 
+        try:
+            design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
+            serializer = DesignPrinciplesSerializer(design_principles)
+            design_principles_data = serializer.data
+        except DesignPrinciples.DoesNotExist:
+            return Response({"error": "Design Principles does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
         final_data = {}
         sanitized_company_name = re.sub(r'\s+', '_', company_name)
 
@@ -783,7 +790,7 @@ class CompanyAPIView(APIView):
 
         if collection:
             print("In if block")
-            data_from_langchain = query_with_langchain(company_name, collection)
+            data_from_langchain = query_with_langchain(company_name, collection, design_principles_data)
 
             data_with_values_from_langchain = {field: value for field, value in data_from_langchain.items() if not re.search(r'not\s*found', value, re.IGNORECASE)}
 
