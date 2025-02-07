@@ -1575,19 +1575,34 @@ class GenerateEVPStatementAPIView(APIView):
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
-        company_id = company.id
 
         main_theme = request.data.get("main_theme")
         pillar_1 = request.data.get("pillar_1")
         pillar_2 = request.data.get("pillar_2")
         pillar_3 = request.data.get("pillar_3")
+        tagline = request.data.get("tagline")
+        tagline_desc = request.data.get("tagline_desc")
 
-        if EVPStatement.objects.filter(user=user, company=company_id).exists():
-            existing_messaging_hierarchy_data = EVPStatement.objects.get(user=user, company=company_id)
+        if EVPStatement.objects.filter(user=user, company=company).exists():
+            existing_messaging_hierarchy_data = EVPStatement.objects.get(user=user, company=company)
             serializer = EVPStatementSerializer(existing_messaging_hierarchy_data)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company_id)
+        if tagline and tagline_desc:
+            evp_statement = EVPStatement.objects.create(
+                user=user,
+                company=company,
+                main_theme = main_theme,
+                pillar_1 = pillar_1,
+                pillar_2 = pillar_2,
+                pillar_3 = pillar_3,
+                tagline = tagline,
+                tagline_desc = tagline_desc
+            )
+            serializer = EVPStatementSerializer(evp_statement)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
         evp_statement_themes_data = " ".join(instance.theme_desc for instance in evp_statement_themes)
 
         generated_evp_statement = get_evp_statement(
@@ -1598,19 +1613,16 @@ class GenerateEVPStatementAPIView(APIView):
             pillar_3
         )
 
-        evp_statement = EVPStatement.objects.create(
-            user=user,
-            company=company,
-            main_theme = main_theme,
-            pillar_1 = pillar_1,
-            pillar_2 = pillar_2,
-            pillar_3 = pillar_3,
-            tagline = generated_evp_statement.get("tagline", ""),
-            tagline_desc = generated_evp_statement.get("advertising_body_copy", "")
-        )
+        response_data = {
+            "main_theme": main_theme,
+            "pillar_1": pillar_1,
+            "pillar_2": pillar_2,
+            "pillar_3": pillar_3,
+            "tagline" : generated_evp_statement.get("tagline", ""),
+            "tagline_desc" : generated_evp_statement.get("advertising_body_copy", "") 
+        }
 
-        serializer = EVPStatementSerializer(evp_statement)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(response_data, status=status.HTTP_200_OK)
     
 class RegenerateEVPStatement(APIView):
     permission_classes = [IsAuthenticated]
