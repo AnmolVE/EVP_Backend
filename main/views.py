@@ -1634,26 +1634,20 @@ class RegenerateEVPStatement(APIView):
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"error": "Company does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        
-        evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
-        evp_statement_themes_data = " ".join(instance.theme_desc for instance in evp_statement_themes)
 
         try:
             evp_statement = EVPStatement.objects.get(user=user, company=company)
             serializer = EVPStatementSerializer(evp_statement)
-            evp_statement_to_update = serializer.data
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except EVPStatement.DoesNotExist:
-            return Response({"error": "EVP Statement does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        
-        regenerated_evp_statement = get_regenerated_evp_statement(evp_statement_themes_data, evp_statement_to_update)
+            evp_statement = None
 
-        evp_statement.tagline = regenerated_evp_statement.get("tagline", "")
-        evp_statement.tagline_desc = regenerated_evp_statement.get("tagline_desc", "")
-        evp_statement.save()
-
-        new_evp_statement = EVPStatement.objects.get(user=user, company=company)
-        serializer = EVPStatementSerializer(new_evp_statement)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        evp_statement_to_update = request.data.get("evp_statement_to_update")
+        if evp_statement_to_update:
+            evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
+            evp_statement_themes_data = " ".join(instance.theme_desc for instance in evp_statement_themes)
+            regenerated_evp_statement = get_regenerated_evp_statement(evp_statement_themes_data, evp_statement_to_update)
+            return Response(regenerated_evp_statement, status=status.HTTP_200_OK)
     
 class MessagingHierarchySpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2454,7 +2448,7 @@ class EVPExecutionPlanSpecificAPIView(APIView):
                 })
 
         return Response(response_data, status=status.HTTP_200_OK)
-    
+
 
 # *******************Module 2 - Internal Communication***********************
 
@@ -2490,7 +2484,6 @@ class ICICSIAPIView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
-        
 
 class ICICSISpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
