@@ -2000,7 +2000,7 @@ all_touchpoint_prompts = {
 """,
 "Alumni Networking Opportunities": """Draft a communication that informs alumni about upcoming networking opportunities. The message should include details about the event, key participants, and the purpose of the networking session. Reflect our Employee Value Proposition (EVP) by emphasizing the benefits of staying connected and how these opportunities can contribute to ongoing professional growth.
 """,
-"Alumni Feedback Surveys": """Create a feedback survey for alumni to gather their insights on [insert specific topic, e.g., alumni engagement, event satisfaction]. The survey should include targeted questions, a link to participate, and an assurance of confidentiality. Ensure that the survey aligns with our Employee Value Proposition (EVP) by emphasizing the importance of alumni feedback in shaping future initiatives.
+"Alumni Feedback Surveys": """Create a feedback survey for alumni to gather their insights. The survey should include targeted questions, a link to participate, and an assurance of confidentiality. Ensure that the survey aligns with our Employee Value Proposition (EVP) by emphasizing the importance of alumni feedback in shaping future initiatives.
 """,
 "Alumni Social Media Content": """Develop a series of social media posts aimed at engaging alumni. The content should include key messages, engaging visuals, and a clear call-to-action for alumni to interact or participate in upcoming activities. Reflect our Employee Value Proposition (EVP) by showcasing how the company values its alumni and encourages continued connection and involvement.
 """,

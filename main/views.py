@@ -2265,6 +2265,25 @@ class Tollgate1APIView(APIView):
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
         
+        is_check = request.data.get("is_check")
+        if is_check:
+            if is_check is not True:
+                return Response({"error": "You have already verified it and cannot be changed now"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                tollgate_pass = TollgatePass.objects.get(user=user, company=company)
+                tollgate_pass.tollgate1_is_check = True
+                tollgate_pass.save()
+                return Response({"message": "Discovery Report is verified", "data": {"is_check": True}}, status=status.HTTP_200_OK)
+            except TollgatePass.DoesNotExist:
+                return Response({"error": "Please create a discovery report first"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            tollgate_pass = TollgatePass.objects.get(user=user, company=company)
+            serializer = TollgatePassSerializer(tollgate_pass)
+            return Response({"message": "Discovery Report already created", "data": serializer.data}, status=status.HTTP_200_OK)
+        except TollgatePass.DoesNotExist:
+            tollgate_pass = None
+        
         try:
             design_principles = DesignPrinciples.objects.get(user=user, company_name=company_name)
             serializer = DesignPrinciplesSerializer(design_principles)
@@ -2275,7 +2294,15 @@ class Tollgate1APIView(APIView):
 
         tollgate1_data = get_tollgate1_data(company_name, design_principles_data)
 
-        return Response({"tollgate_data": tollgate1_data}, status=status.HTTP_200_OK)
+        tollgate_pass = TollgatePass.objects.create(
+            user=user,
+            company=company,
+            tollgate1_basic=tollgate1_data,
+        )
+        serializer = TollgatePassSerializer(tollgate_pass)
+        return Response({"message": "Discovery Report created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+
+        # return Response({"tollgate_data": tollgate1_data}, status=status.HTTP_200_OK)
     
 class Tollgate2APIView(APIView):
     def post(self, request):

@@ -159,6 +159,11 @@ class EVPCalendarSerializer(serializers.ModelSerializer):
         model = EVPCalendar
         fields = "__all__"
 
+class TollgatePassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TollgatePass
+        fields = "__all__"
+
 class EVPStatementAndPillarsSerializer(serializers.ModelSerializer):
     class Meta:
         model = EVPStatementAndPillars

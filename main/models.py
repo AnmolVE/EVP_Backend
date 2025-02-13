@@ -385,6 +385,21 @@ class EVPCalendar(models.Model):
     def __str__(self):
         return f"{self.company.name} - EVPCalendar"
     
+class TollgatePass(models.Model):
+    user = models.ForeignKey(NewUser, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    tollgate1_basic = models.TextField(null=True, blank=True)
+    tollgate2_basic = models.TextField(null=True, blank=True)
+    tollgate3_basic = models.TextField(null=True, blank=True)
+    tollgate4_basic = models.TextField(null=True, blank=True)
+    tollgate1_is_check = models.BooleanField(default=False)
+    tollgate2_is_check = models.BooleanField(default=False)
+    tollgate3_is_check = models.BooleanField(default=False)
+    tollgate4_is_check = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.company.name} - TollgatePass"
+    
 class EVPStatementAndPillars(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)

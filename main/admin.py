@@ -154,6 +154,10 @@ class EVPCalendarAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "calendar_data"]
     list_filter = ["company"]
 
+class TollgatePassAdmin(admin.ModelAdmin):
+    list_display = ["tollgate1_basic", "tollgate2_basic", "tollgate3_basic", "tollgate4_basic", "tollgate1_is_check", "tollgate2_is_check", "tollgate3_is_check", "tollgate4_is_check"]
+    list_filter = ["company"]
+
 class EVPStatementAndPillarsAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "evp_statement_document", "evp_statement_thumbnail", "evp_statement_text"]
     list_filter = ["company"]
@@ -207,6 +211,7 @@ admin.site.register(EVPEmbedmentTouchpoint, EVPEmbedmentTouchpointAdmin)
 admin.site.register(EVPEmbedmentMessage, EVPEmbedmentMessageAdmin)
 admin.site.register(EVPHandbook, EVPHandbookAdmin)
 admin.site.register(EVPCalendar, EVPCalendarAdmin)
+admin.site.register(TollgatePass, TollgatePassAdmin)
 admin.site.register(EVPStatementAndPillars, EVPStatementAndPillarsAdmin)
 
 
