@@ -2337,7 +2337,7 @@ class Tollgate2APIView(APIView):
 
         try:
             tollgate_pass = TollgatePass2.objects.get(user=user, company=company)
-        except TollgatePass.DoesNotExist:
+        except TollgatePass2.DoesNotExist:
             tollgate_pass = None
 
         if is_check is not None:
@@ -2407,16 +2407,49 @@ class Tollgate2APIView(APIView):
             "data": serializer.data,
         }, status=status.HTTP_201_CREATED)
     
-        # return Response({"tollgate_data": tollgate1_data}, status=status.HTTP_200_OK)
+        # return Response({"tollgate_data": tollgate2_data}, status=status.HTTP_200_OK)
     
 class Tollgate3APIView(APIView):
     def post(self, request):
         user = request.user
         company_name = request.data.get("company_name")
+        is_check = request.data.get("is_check")
+
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            tollgate_pass = TollgatePass3.objects.get(user=user, company=company)
+        except TollgatePass3.DoesNotExist:
+            tollgate_pass = None
+
+        if is_check is not None:
+            if is_check is True:
+                if tollgate_pass:
+                    tollgate_pass.tollgate3_is_check = True
+                    tollgate_pass.save()
+                    return Response({
+                        "message": "Dissect Report is verified",
+                        "data": {"is_check": True},
+                    }, status=status.HTTP_200_OK)
+                return Response({
+                    "error": "Please create a dissect report first"
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            elif is_check is False:
+                if tollgate_pass and tollgate_pass.tollgate3_is_check:
+                    return Response({
+                        "error": "You have already verified it and cannot be changed now"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+        if tollgate_pass:
+            serializer = TollgatePass3Serializer(tollgate_pass)
+            return Response({
+                "message": "Dissect Report already created",
+                "data": serializer.data,
+            }, status=status.HTTP_200_OK)
         
         try:
             analysis = SwotAnalysis.objects.get(user=user, company=company)
@@ -2434,16 +2467,60 @@ class Tollgate3APIView(APIView):
         
         tollgate3_data = get_tollgate3_data(analysis_data, alignment_data)
 
-        return Response({"tollgate3_data": tollgate3_data})
+        tollgate_pass = TollgatePass3.objects.create(
+            user=user,
+            company=company,
+            tollgate3_basic=tollgate3_data,
+        )
+        serializer = TollgatePass3Serializer(tollgate_pass)
+        return Response({
+            "message": "Dissect Report created successfully",
+            "data": serializer.data,
+        }, status=status.HTTP_201_CREATED)
+    
+        # return Response({"tollgate_data": tollgate3_data}, status=status.HTTP_200_OK)
     
 class Tollgate4APIView(APIView):
     def post(self, request):
         user = request.user
         company_name = request.data.get("company_name")
+        is_check = request.data.get("is_check")
+
         try:
             company = Company.objects.get(user=user, name=company_name)
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            tollgate_pass = TollgatePass4.objects.get(user=user, company=company)
+        except TollgatePass4.DoesNotExist:
+            tollgate_pass = None
+
+        if is_check is not None:
+            if is_check is True:
+                if tollgate_pass:
+                    tollgate_pass.tollgate4_is_check = True
+                    tollgate_pass.save()
+                    return Response({
+                        "message": "Design Report is verified",
+                        "data": {"is_check": True},
+                    }, status=status.HTTP_200_OK)
+                return Response({
+                    "error": "Please create a design report first"
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            elif is_check is False:
+                if tollgate_pass and tollgate_pass.tollgate4_is_check:
+                    return Response({
+                        "error": "You have already verified it and cannot be changed now"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+        if tollgate_pass:
+            serializer = TollgatePass4Serializer(tollgate_pass)
+            return Response({
+                "message": "Design Report already created",
+                "data": serializer.data,
+            }, status=status.HTTP_200_OK)
         
         try:
             evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
@@ -2482,7 +2559,18 @@ class Tollgate4APIView(APIView):
         
         tollgate4_data = get_tollgate4_data(evp_statement_themes_data, creative_direction_data, evp_definitions_data, evp_audits_data, evp_promises_data)
 
-        return Response({"tollgate4_data": tollgate4_data})
+        tollgate_pass = TollgatePass4.objects.create(
+            user=user,
+            company=company,
+            tollgate4_basic=tollgate4_data,
+        )
+        serializer = TollgatePass4Serializer(tollgate_pass)
+        return Response({
+            "message": "Design Report created successfully",
+            "data": serializer.data,
+        }, status=status.HTTP_201_CREATED)
+    
+        # return Response({"tollgate_data": tollgate4_data}, status=status.HTTP_200_OK)
 
 class EVPStatementAndPillarsSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]
