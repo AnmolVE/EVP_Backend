@@ -1953,189 +1953,7 @@ class EVPEmbedmentAPIView(APIView):
         )
 
         return Response(evp_embedment_data_from_chatgpt)
-    
-class EVPNarrativeAPIView(APIView):
-    def get(self, request):
-        company_name = request.data.get("company_name")
-        try:
-            company = Company.objects.get(name=company_name)
-        except Company.DoesNotExist:
-            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        attribute_of_great_place = AttributesOfGreatPlace.objects.get(company=company)
-        serializer = AttributesOfGreatPlaceSerializer(attribute_of_great_place)
-        attribute_of_great_place_data = serializer.data
 
-        key_themes = KeyThemes.objects.get(company=company)
-        serializer = KeyThemesSerializer(key_themes)
-        key_themes_data = serializer.data
-
-        audience_wise_messaging = AudienceWiseMessaging.objects.get(company=company)
-        serializer = AudienceWiseMessagingSerializer(audience_wise_messaging)
-        audience_wise_messaging_data = serializer.data
-        print("hello 1")
-
-        prompt1 = f"""
-                First analyze the Attribute Data :
-
-                Attribute Data : {attribute_of_great_place_data}
-
-                Now analyze the Key Themes Data :
-
-                Key Themes Data : {key_themes_data}
-
-                Now analyze the Audience Wise Messaging Data :
-
-                Audience Wise Messaging Data : {audience_wise_messaging_data}
-
-                Now create a summary of whole above data within 300 words
-             """
-
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = [
-            {
-                "role":"system",
-                "content":"""You are an expert summary creator from the given data.
-                            """
-            },
-            {
-                "role":"user",
-                "content":prompt1
-            }
-        ],
-        temperature=0.3,
-        max_tokens=4000,
-        )
-        chat_response = completion.choices[0].message.content
-        data_1 = chat_response
-
-        analysis = SwotAnalysis.objects.get(company=company)
-        serializer = SwotAnalysisSerializer(analysis)
-        analysis_data = serializer.data
-
-        alignment = Alignment.objects.get(company=company)
-        serializer = AlignmentSerializer(alignment)
-        alignment_data = serializer.data
-        print("hello 2")
-
-        prompt2 = f"""
-                First analyze the Analysis Data :
-
-                Analysis Data : {analysis_data}
-
-                Now analyze the Alignment Data :
-
-                Alignment Data : {alignment_data}
-
-                Now create a summary of whole above data within 300 words
-             """
-
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = [
-            {
-                "role":"system",
-                "content":"""You are an expert summary creator from the given data.
-                            """
-            },
-            {
-                "role":"user",
-                "content":prompt2
-            }
-        ],
-        temperature=0.3,
-        max_tokens=4000,
-        )
-        chat_response = completion.choices[0].message.content
-        data_2 = chat_response
-
-        top_4_themes = MessagingHierarchyTabs.objects.filter(company=company)
-        serializer = MessagingHierarchyTabsSerializer(top_4_themes, many=True)
-        top_4_themes_data = serializer.data
-
-        messaging_hierarchy = MessagingHierarchyData.objects.get(company=company)
-        serializer = MessagingHierarchyDataSerializer(messaging_hierarchy)
-        messaging_hierarchy_data = serializer.data
-
-        evp_promise = EVPPromise.objects.filter(company=company)
-        serializer = EVPPromiseSerializer(evp_promise, many=True)
-        evp_promise_data = serializer.data
-        print("hello 3")
-
-        prompt3 = f"""
-                First analyze the Top 4 Themes Data :
-
-                Top 4 Themes Data : {top_4_themes_data}
-
-                Now analyze the Messaging Hierarchy Data :
-
-                Messaging Hierarchy Data : {messaging_hierarchy_data}
-
-                Now analyze the EVP Promise Data :
-
-                EVP Promise Data : {evp_promise_data}
-
-                Now create a summary of whole above data within 300 words
-             """
-
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = [
-            {
-                "role":"system",
-                "content":"""You are an expert summary creator from the given data.
-                            """
-            },
-            {
-                "role":"user",
-                "content":prompt3
-            }
-        ],
-        temperature=0.3,
-        max_tokens=4000,
-        )
-        chat_response = completion.choices[0].message.content
-        data_3 = chat_response
-        print("hello 4")
-
-        prompt4 = f"""
-                First analyze the Dataset 1 :
-
-                Dataset 1 : {data_1}
-
-                Now analyze the Dataset 2 :
-
-                Dataset 2 : {data_2}
-
-                Now analyze the Dataset 3 :
-
-                Dataset 3 : {data_3}
-
-                After analyzing all the above datasets, create a summary.
-             """
-
-        completion = chat_client.chat.completions.create(
-        model=AZURE_OPENAI_DEPLOYMENT,
-        messages = [
-            {
-                "role":"system",
-                "content":"""You are an expert summary creator from the given data.
-                            """
-            },
-            {
-                "role":"user",
-                "content":prompt4
-            }
-        ],
-        temperature=0.3,
-        max_tokens=4000,
-        )
-        chat_response = completion.choices[0].message.content
-        final_data = chat_response
-
-        return Response(final_data)
-    
 class EVPHandBookAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2149,25 +1967,13 @@ class EVPHandBookAPIView(APIView):
         
         try:
             evp_handbook = EVPHandbook.objects.get(user=user, company=company)
+            serializer = EVPHandbookSerializer(evp_handbook)
+            return Response({
+                "message": "EVP Handbook fetched successfully",
+                "data": serializer.data,
+            }, status=status.HTTP_200_OK)
         except EVPHandbook.DoesNotExist:
             evp_handbook = None
-
-        if evp_handbook:
-            serializer = EVPHandbookSerializer(evp_handbook)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        handbook_data = request.data.get("handbook_data")
-        if handbook_data:
-            evp_handbook, created = EVPHandbook.objects.get_or_create(
-                company = company,
-                user = user,
-                defaults = {"handbook_data": handbook_data}
-            )
-            if not created:
-                evp_handbook.handbook_data = handbook_data
-                evp_handbook.save()
-            serializer = EVPHandbookSerializer(evp_handbook)
-            return Response(serializer.data, status=status.HTTP_200_OK)
         
         evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
         serializer = MessagingHierarchyTabsSerializer(evp_statement_themes, many=True)
@@ -2194,7 +2000,18 @@ class EVPHandBookAPIView(APIView):
             evp_audit_data,
         )
 
-        return Response({"handbook_data": evp_handbook_data_from_chatgpt}, status=status.HTTP_200_OK)
+        evp_handbook = EVPHandbook.objects.create(
+            user=user,
+            company=company,
+            handbook_data=evp_handbook_data_from_chatgpt
+        )
+        serializer = EVPHandbookSerializer(evp_handbook)
+        return Response({
+            "message": "EVP Handbook created successfully",
+            "data": serializer.data,
+        }, status=status.HTTP_201_CREATED)
+
+        # return Response({"handbook_data": evp_handbook_data_from_chatgpt}, status=status.HTTP_200_OK)
 
 class EVPCalendarAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2209,25 +2026,13 @@ class EVPCalendarAPIView(APIView):
         
         try:
             evp_calendar = EVPCalendar.objects.get(user=user, company=company)
+            serializer = EVPCalendarSerializer(evp_calendar)
+            return Response({
+                "message": "EVP Calendar fetched successfully",
+                "data": serializer.data,
+            }, status=status.HTTP_200_OK)
         except EVPCalendar.DoesNotExist:
             evp_calendar = None
-
-        if evp_calendar:
-            serializer = EVPCalendarSerializer(evp_calendar)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        calendar_data = request.data.get("calendar_data")
-        if calendar_data:
-            evp_calendar, created = EVPCalendar.objects.get_or_create(
-                company = company,
-                user = user,
-                defaults = {"calendar_data": calendar_data}
-            )
-            if not created:
-                evp_calendar.calendar_data = calendar_data
-                evp_calendar.save()
-            serializer = EVPCalendarSerializer(evp_calendar)
-            return Response(serializer.data, status=status.HTTP_200_OK)
         
         evp_statement_themes = EVPStatementThemes.objects.filter(user=user, company=company)
         serializer = MessagingHierarchyTabsSerializer(evp_statement_themes, many=True)
@@ -2254,7 +2059,18 @@ class EVPCalendarAPIView(APIView):
             evp_audit_data,
         )
 
-        return Response({"calendar_data": evp_calendar_data_from_chatgpt}, status=status.HTTP_200_OK)
+        evp_calendar = EVPCalendar.objects.create(
+            user=user,
+            company=company,
+            calendar_data=evp_calendar_data_from_chatgpt
+        )
+        serializer = EVPCalendarSerializer(evp_calendar)
+        return Response({
+            "message": "EVP Calendar created successfully",
+            "data": serializer.data,
+        }, status=status.HTTP_201_CREATED)
+
+        # return Response({"calendar_data": evp_calendar_data_from_chatgpt}, status=status.HTTP_200_OK)
 
 class Tollgate1APIView(APIView):
     def post(self, request):

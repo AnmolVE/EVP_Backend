@@ -54,7 +54,6 @@ urlpatterns = [
     path("evp-promise/", EVPPromiseAPIView.as_view(), name="evp-promise"),
     path("evp-audit/", EVPAuditAPIView.as_view(), name="evp-audit"),
     path("evp-embedment/", EVPEmbedmentAPIView.as_view(), name="evp-embedment"),
-    path("evp-narrative/", EVPNarrativeAPIView.as_view(), name="evp-narrative"),
     path("evp-handbook/", EVPHandBookAPIView.as_view(), name="evp-handbook"),
     path("evp-calendar/", EVPCalendarAPIView.as_view(), name="evp-calendar"),
     path("evp-tollgate1/", Tollgate1APIView.as_view(), name="evp-tollgate1"),
