@@ -60,6 +60,7 @@ urlpatterns = [
     path("evp-tollgate2/", Tollgate2APIView.as_view(), name="evp-tollgate2"),
     path("evp-tollgate3/", Tollgate3APIView.as_view(), name="evp-tollgate3"),
     path("evp-tollgate4/", Tollgate4APIView.as_view(), name="evp-tollgate4"),
+    path("evp-tollgate5/", Tollgate5APIView.as_view(), name="evp-tollgate5"),
     path("evp-execution-plan/<str:company_name>/", EVPExecutionPlanSpecificAPIView.as_view(), name="evp-execution-plan"),
     path("evp-statement-and-pillars/<str:company_name>/", EVPStatementAndPillarsSpecificAPIView.as_view(), name="evp-statement-and-pillars"),
 

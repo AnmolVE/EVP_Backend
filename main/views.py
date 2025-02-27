@@ -75,6 +75,7 @@ from .utils.langchaining import (
     get_tollgate2_data,
     get_tollgate3_data,
     get_tollgate4_data,
+    get_tollgate5_data,
 )
 from .utils.email_send import send_email_to_users
 
@@ -2387,6 +2388,91 @@ class Tollgate4APIView(APIView):
         }, status=status.HTTP_201_CREATED)
     
         # return Response({"tollgate_data": tollgate4_data}, status=status.HTTP_200_OK)
+
+class Tollgate5APIView(APIView):
+    def post(self, request):
+        user = request.user
+        company_name = request.data.get("company_name")
+        is_check = request.data.get("is_check")
+
+        try:
+            company = Company.objects.get(user=user, name=company_name)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            tollgate_pass = TollgatePass5.objects.get(user=user, company=company)
+        except TollgatePass5.DoesNotExist:
+            tollgate_pass = None
+
+        if is_check is not None:
+            if is_check is True:
+                if tollgate_pass:
+                    tollgate_pass.tollgate5_is_check = True
+                    tollgate_pass.save()
+                    return Response({
+                        "message": "Delivery Report is verified",
+                        "data": {"is_check": True},
+                    }, status=status.HTTP_200_OK)
+                return Response({
+                    "error": "Please create a delivery report first"
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            elif is_check is False:
+                if tollgate_pass and tollgate_pass.tollgate5_is_check:
+                    return Response({
+                        "error": "You have already verified it and cannot be changed now"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+        if tollgate_pass:
+            serializer = TollgatePass4Serializer(tollgate_pass)
+            return Response({
+                "message": "Delivery Report already created",
+                "data": serializer.data,
+            }, status=status.HTTP_200_OK)
+        
+        try:
+            tollgate_1_report = TollgatePass.objects.get(user=user, company=company)
+            serializer = TollgatePassSerializer(tollgate_1_report)
+            tollgate_1_report_data = serializer.data
+        except TollgatePass.DoesNotExist:
+            return Response({"error": "Tollgate 1 does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            tollgate_2_report = TollgatePass2.objects.get(user=user, company=company)
+            serializer = TollgatePass2Serializer(tollgate_2_report)
+            tollgate_2_report_data = serializer.data
+        except TollgatePass.DoesNotExist:
+            return Response({"error": "Tollgate 2 does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            tollgate_3_report = TollgatePass3.objects.get(user=user, company=company)
+            serializer = TollgatePass3Serializer(tollgate_3_report)
+            tollgate_3_report_data = serializer.data
+        except TollgatePass.DoesNotExist:
+            return Response({"error": "Tollgate 3 does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            tollgate_4_report = TollgatePass4.objects.get(user=user, company=company)
+            serializer = TollgatePass4Serializer(tollgate_4_report)
+            tollgate_4_report_data = serializer.data
+        except TollgatePass.DoesNotExist:
+            return Response({"error": "Tollgate 4 does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        tollgate5_data = get_tollgate5_data(tollgate_1_report, tollgate_2_report, tollgate_3_report, tollgate_4_report)
+
+        tollgate_pass = TollgatePass5.objects.create(
+            user=user,
+            company=company,
+            tollgate5_basic=tollgate5_data,
+        )
+        serializer = TollgatePass5Serializer(tollgate_pass)
+        return Response({
+            "message": "Design Report created successfully",
+            "data": serializer.data,
+        }, status=status.HTTP_201_CREATED)
+    
+        # return Response({"tollgate_data": tollgate5_data}, status=status.HTTP_200_OK)
 
 class EVPStatementAndPillarsSpecificAPIView(APIView):
     permission_classes = [IsAuthenticated]

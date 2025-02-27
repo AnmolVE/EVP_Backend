@@ -420,6 +420,15 @@ class TollgatePass4(models.Model):
 
     def __str__(self):
         return f"{self.company.name} - TollgatePass4"
+    
+class TollgatePass5(models.Model):
+    user = models.ForeignKey(NewUser, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    tollgate5_basic = models.TextField(null=True, blank=True)
+    tollgate5_is_check = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.company.name} - TollgatePass5"
 
 class EVPStatementAndPillars(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)

@@ -2480,6 +2480,53 @@ def get_tollgate4_data(evp_statement_themes_data, creative_direction_data, evp_d
     chat_response = completion.choices[0].message.content
     return chat_response
 
+def get_tollgate5_data(tollgate_1_report, tollgate_2_report, tollgate_3_report, tollgate_4_report):
+    prompt = f"""I am giving you the data which i have stored in the sql database for a application.
+        First analyze the given Tollgate 1 Report:
+        Tollgate 1 Report: {tollgate_1_report}
+
+        Then analyze the Tollgate 2 Report:
+        Tollgate 2 Report: {tollgate_2_report}
+
+        Then analyze the Tollgate 3 Report:
+        Tollgate 3 Report: {tollgate_3_report}
+
+        Then analyze the Tollgate 4 Report:
+        Tollgate 4 Report: {tollgate_4_report}
+
+        After completely analyze the above information do the following using the information
+
+        "Generate a Tollgate 5 summary PDF that provides an executive-level overview of all the phases so far for stakeholder approval. The document should include:
+
+        1. Start with a paragraph stating that the positioning exercise has now successfully concluded. All stakeholders have signed off on the positioning statement and related messaging. State that let's recap the journey so far:
+        2. Provide a Short summary of tollgate 1 report
+        3. Provide a Short summary of tollgate 2 report
+        4. Provide a Short summary of tollgate 3 report
+        5. Provide a Short summary of tollgate 4 report
+        6. End with a conclusion paragraph that this messaging is now the core backbone of all talent facing messaging for our organisation. It will seamlessly flow into various touch points. We thank everyone for their involvement.
+        """
+    
+    print(len(prompt))
+    
+    completion = chat_client.chat.completions.create(
+    model=AZURE_OPENAI_DEPLOYMENT,
+    messages = [
+        {
+            "role":"system",
+            "content":"""You are an expert in fetching information from the given data.
+                        """
+        },
+        {
+            "role":"user",
+            "content":prompt
+        }
+    ],
+    temperature=0.3,
+    max_tokens=4000,
+    )
+    chat_response = completion.choices[0].message.content
+    return chat_response
+
 import chromadb
 
 def testing_data(collection):

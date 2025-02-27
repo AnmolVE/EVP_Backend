@@ -170,6 +170,10 @@ class TollgatePass4Admin(admin.ModelAdmin):
     list_display = ["tollgate4_basic", "tollgate4_is_check"]
     list_filter = ["company"]
 
+class TollgatePass5Admin(admin.ModelAdmin):
+    list_display = ["tollgate5_basic", "tollgate5_is_check"]
+    list_filter = ["company"]
+
 class EVPStatementAndPillarsAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "evp_statement_document", "evp_statement_thumbnail", "evp_statement_text"]
     list_filter = ["company"]
@@ -227,6 +231,7 @@ admin.site.register(TollgatePass, TollgatePassAdmin)
 admin.site.register(TollgatePass2, TollgatePass2Admin)
 admin.site.register(TollgatePass3, TollgatePass3Admin)
 admin.site.register(TollgatePass4, TollgatePass4Admin)
+admin.site.register(TollgatePass5, TollgatePass5Admin)
 admin.site.register(EVPStatementAndPillars, EVPStatementAndPillarsAdmin)
 
 

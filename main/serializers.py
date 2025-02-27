@@ -179,6 +179,11 @@ class TollgatePass4Serializer(serializers.ModelSerializer):
         model = TollgatePass4
         fields = "__all__"
 
+class TollgatePass5Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = TollgatePass5
+        fields = "__all__"
+
 class EVPStatementAndPillarsSerializer(serializers.ModelSerializer):
     class Meta:
         model = EVPStatementAndPillars
