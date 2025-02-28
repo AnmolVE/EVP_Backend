@@ -2425,7 +2425,7 @@ class Tollgate5APIView(APIView):
                     }, status=status.HTTP_400_BAD_REQUEST)
 
         if tollgate_pass:
-            serializer = TollgatePass4Serializer(tollgate_pass)
+            serializer = TollgatePass5Serializer(tollgate_pass)
             return Response({
                 "message": "Delivery Report already created",
                 "data": serializer.data,
@@ -2459,7 +2459,7 @@ class Tollgate5APIView(APIView):
         except TollgatePass.DoesNotExist:
             return Response({"error": "Tollgate 4 does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
-        tollgate5_data = get_tollgate5_data(tollgate_1_report, tollgate_2_report, tollgate_3_report, tollgate_4_report)
+        tollgate5_data = get_tollgate5_data(tollgate_1_report_data, tollgate_2_report_data, tollgate_3_report_data, tollgate_4_report_data)
 
         tollgate_pass = TollgatePass5.objects.create(
             user=user,

@@ -2480,19 +2480,19 @@ def get_tollgate4_data(evp_statement_themes_data, creative_direction_data, evp_d
     chat_response = completion.choices[0].message.content
     return chat_response
 
-def get_tollgate5_data(tollgate_1_report, tollgate_2_report, tollgate_3_report, tollgate_4_report):
+def get_tollgate5_data(tollgate_1_report_data, tollgate_2_report_data, tollgate_3_report_data, tollgate_4_report_data):
     prompt = f"""I am giving you the data which i have stored in the sql database for a application.
         First analyze the given Tollgate 1 Report:
-        Tollgate 1 Report: {tollgate_1_report}
+        Tollgate 1 Report: {tollgate_1_report_data}
 
         Then analyze the Tollgate 2 Report:
-        Tollgate 2 Report: {tollgate_2_report}
+        Tollgate 2 Report: {tollgate_2_report_data}
 
         Then analyze the Tollgate 3 Report:
-        Tollgate 3 Report: {tollgate_3_report}
+        Tollgate 3 Report: {tollgate_3_report_data}
 
         Then analyze the Tollgate 4 Report:
-        Tollgate 4 Report: {tollgate_4_report}
+        Tollgate 4 Report: {tollgate_4_report_data}
 
         After completely analyze the above information do the following using the information
 
