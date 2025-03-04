@@ -754,6 +754,19 @@ class DesignPrinciplesSpecificAPIView(APIView):
         design_principles.delete()
         return Response({"message": "Design Principles deleted successfully"}, status=status.HTTP_200_OK)
 
+class FinishedModulesView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user = request.user
+        company_name = request.query_params.get("company_name")
+
+        finished_modules = ModuleFlow.objects.filter(user=user, company_name=company_name, is_finished=True)
+        serializer = ModuleFlowSerializer(finished_modules, many=True)
+        return Response({
+            "message": "Finished modules fetched successfully",
+            "data": serializer.data,
+        }, status=status.HTTP_200_OK)
+
 class CompanyAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):

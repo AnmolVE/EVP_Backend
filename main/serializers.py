@@ -39,6 +39,11 @@ class DesignPrinciplesSerializer(serializers.ModelSerializer):
         model = DesignPrinciples
         fields = "__all__"
 
+class ModuleFlowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModuleFlow
+        fields = ["module_name"]
+
 class TalentDatasetSerializer(serializers.ModelSerializer):
     class Meta:
         model = TalentDataset

@@ -55,6 +55,10 @@ class DesignPrinciplesAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company_name", "question_1", "question_2", "question_3", "question_4", "question_5", "question_6", "question_7", "question_8", "question_9", "question_10", "question_11", "question_12", "question_13", "question_14", "question_15"]
     list_filter = ["company_name"]
 
+class ModuleFlowAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "company_name", "module_name", "is_finished"]
+    list_filter = ["company_name"]
+
 class TalentDatasetAdmin(admin.ModelAdmin):
     list_display = ["id", "user", "company", "area", "role", "location", "seniority", "key_motivators"]
 
@@ -202,6 +206,7 @@ class ICICSIAdmin(admin.ModelAdmin):
 admin.site.register(NewUser, NewUserAdmin)
 admin.site.register(Company, CompanyAdmin)
 admin.site.register(DesignPrinciples, DesignPrinciplesAdmin)
+admin.site.register(ModuleFlow, ModuleFlowAdmin)
 admin.site.register(TalentDataset, TalentDatasetAdmin)
 admin.site.register(Perception, PerceptionAdmin)
 admin.site.register(Loyalty, LoyaltyAdmin)

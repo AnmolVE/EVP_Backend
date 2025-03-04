@@ -106,6 +106,23 @@ class DesignPrinciples(models.Model):
     def __str__(self):
         return f"Design_Principles"
     
+class ModuleFlow(models.Model):
+    MODULE_CHOICES = [
+        ('Position', 'Position'),
+        ('Create', 'Create'),
+        ('Engage', 'Engage'),
+        ('Influence', 'Influence'),
+        ('Attract', 'Attract'),
+        ('Measure', 'Measure'),
+    ]
+    user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
+    company_name = models.CharField(max_length=1000, default="")
+    module_name = models.CharField(max_length=50, choices=MODULE_CHOICES, unique=True)
+    is_finished = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.module_name
+    
 class TalentDataset(models.Model):
     user = models.ForeignKey(NewUser, default=None, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)

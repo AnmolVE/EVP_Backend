@@ -23,6 +23,7 @@ urlpatterns = [
     path("send-mail/", SendMailAPIView.as_view(), name="send-mail"),
     path("transcript/<str:company_name>/", TranscriptAPIView.as_view(), name="transcript"),
     path("design-principles/", DesignPrinciplesAPIView.as_view(), name="design-principles"),
+    path("finished-modules/", FinishedModulesView.as_view(), name="finished-modules"),
     path("design-principles/<str:company_name>/", DesignPrinciplesSpecificAPIView.as_view(), name="design-principles-specific"),
     path("talent-dataset/", TalentDatasetAPIView.as_view(), name="talent-dataset"),
     path("companies/", CompanyAPIView.as_view(), name='company'),
