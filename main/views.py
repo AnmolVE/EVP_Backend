@@ -2423,6 +2423,12 @@ class Tollgate5APIView(APIView):
                 if tollgate_pass:
                     tollgate_pass.tollgate5_is_check = True
                     tollgate_pass.save()
+                    ModuleFlow.objects.create(
+                        user=user,
+                        company_name=company_name,
+                        module_name="Position",
+                        is_finished=True
+                    )
                     return Response({
                         "message": "Delivery Report is verified",
                         "data": {"is_check": True},
